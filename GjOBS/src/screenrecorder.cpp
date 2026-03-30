@@ -2,32 +2,38 @@
 #include <QVideoFrame>
 #include <QPixmap>
 
-ScreenRecorder::ScreenRecorder(QObject *parent)
+ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
 	: QObject(parent)
 {
-    timer = new QTimer(this);
-    screenCapture.setScreen(QGuiApplication::primaryScreen());
-    videoSink = new QVideoSink(this);
-    session.setVideoSink(videoSink);
+    _timer = timer;
+    _screenCapture.setScreen(QGuiApplication::primaryScreen());
+    _videoSink = new QVideoSink(this);
+    _session.setScreenCapture(&_screenCapture);
+    _session.setVideoSink(_videoSink);
 
-    timer->setInterval(1000 / 60);
+    connect(_timer, &QTimer::timeout, this, &ScreenRecorder::getVideoFrame);
 
-    connect(timer, &QTimer::timeout, this, ScreenRecorder::getVideoFrame);
+    _timer->start();
 }
 
 ScreenRecorder::~ScreenRecorder()
 {}
 
 void ScreenRecorder::startCapture() {
-    screenCapture.start();
+    _screenCapture.start();
 }
 
-QPixmap ScreenRecorder::getVideoFrame() {
-    QVideoFrame frame = videoSink->videoFrame();
+void ScreenRecorder::stopCapture() {
+    _screenCapture.stop();
+    _timer->stop();
+}
+
+void ScreenRecorder::getVideoFrame() {
+    QVideoFrame frame = _videoSink->videoFrame();
     if (frame.map(QVideoFrame::MapMode::ReadOnly)) {
         QImage image = frame.toImage();
-        QPixmap pixmap = QPixmap::fromImage(image);
-        emit videoFrameIsReady(pixmap);
+        emit videoFrameIsReady(image);
+        frame.unmap();
     }
 }
 

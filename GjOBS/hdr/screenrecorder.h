@@ -1,7 +1,6 @@
 #pragma once
 #include <QObject>
-#include <QMediaCaptureSession>
-#include <QMediaFormat>
+#include <QGuiApplication>
 #include <QTimer>
 #include <QUrl>
 #include <QPixmap>
@@ -10,35 +9,37 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioSource>
-#include <QMediaDevices>
 #include <QAudioDevice>
+#include <QMediaFormat>
+#include <QMediaDevices>
 #include <QMediaRecorder>
-#include "outputdevice.h"
+#include <QMediaCaptureSession>
 
 class ScreenRecorder  : public QObject
 {
 	Q_OBJECT
 
 public:
-	ScreenRecorder(QObject *parent);
+	ScreenRecorder(QObject *parent,QTimer* timer);
 	~ScreenRecorder();
 
 	void startCapture();
-
-	QPixmap getVideoFrame();
+	void stopCapture();
+public slots:
+	void getVideoFrame();
 private:
-	QScreenCapture screenCapture;
-	QVideoSink* videoSink;
+	QScreenCapture _screenCapture;
+	QVideoSink* _videoSink;
 
-	QMediaCaptureSession session;
-	QMediaRecorder recorder;
+	QMediaCaptureSession _session;
+	QMediaRecorder _recorder;
 
-	QAudioInput audioInput;
-	QAudioOutput audioOutput;
+	QAudioInput _audioInput;
+	QAudioOutput _audioOutput;
 
-	QTimer* timer;
+	QTimer* _timer;
 
 signals:
-	void videoFrameIsReady(QPixmap pixmap);
+	void videoFrameIsReady(QImage image);
 };
 
