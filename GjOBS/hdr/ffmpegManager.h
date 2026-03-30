@@ -1,14 +1,51 @@
+#pragma once
 extern "C"
 {
-	#include "avformat.h"
+	#include <libavformat/avformat.h>
+	#include <libavcodec/avcodec.h>
 }
+#include "outputdevice.h"
+#include "screenrecorder.h"
 
-#include <memory>
+#include <QQueue>
+#include <QMutex>
 
-class FfmpegManager {
+
+
+class FfmpegManager : public QObject
+{
+
+	Q_OBJECT
+
 public:
-	FfmpegManager::FfmegManager();
-	~FfmpegManager::FfmpegManager();
+	FfmpegManager(OutputDevice* audio,ScreenRecorder* screenRecorder);
+	~FfmpegManager();
+
+	void openFile(const char* filename);
+	void setAudioPacket(const char* data, qint64 len);
+	void setVideoPacket();
+	void appendFrame(QImage image);
+	void stop();
+
 private:
-	std::unique_ptr<AVFormatContext> _AVFormatContext;
+	double getDuration(qint64 len);
+
+private:
+	AVFormatContext* _AVFormatContext = nullptr;
+
+	AVStream* _audioStream = nullptr;
+	AVStream* _videoStream = nullptr;
+
+	OutputDevice* _audioDevice = nullptr;
+	ScreenRecorder* _screenRecorder = nullptr;
+
+	QByteArray audioBuffer;
+	QQueue<QImage> queueFrames;
+
+	uint64_t audioSampleIndex = 0;
+	uint64_t videoSamples = 0;
+
+	QMutex mutex;
+signals:
+	void startWrite();
 };
