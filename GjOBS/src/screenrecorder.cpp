@@ -11,16 +11,17 @@ ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
     _session.setScreenCapture(&_screenCapture);
     _session.setVideoSink(_videoSink);
 
-    connect(_timer, &QTimer::timeout, this, &ScreenRecorder::getVideoFrame);
+    connect(_timer, &QTimer::timeout, this, &ScreenRecorder::getVideoFrame, Qt::DirectConnection);
 
     _timer->start();
+    _screenCapture.start();
 }
 
 ScreenRecorder::~ScreenRecorder()
 {}
 
 void ScreenRecorder::startCapture() {
-    _screenCapture.start();
+    
 }
 
 void ScreenRecorder::stopCapture() {
@@ -32,7 +33,9 @@ void ScreenRecorder::getVideoFrame() {
     QVideoFrame frame = _videoSink->videoFrame();
     if (frame.map(QVideoFrame::MapMode::ReadOnly)) {
         QImage image = frame.toImage();
-        emit videoFrameIsReady(image);
+        qDebug() << image.size();
+        image = image.convertToFormat(QImage::Format_RGBA8888);
+        emit videoFrameIsReady(image,image.format());
         frame.unmap();
     }
 }

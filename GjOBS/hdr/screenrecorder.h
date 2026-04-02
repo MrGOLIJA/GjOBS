@@ -40,6 +40,6 @@ private:
 	QTimer* _timer;
 
 signals:
-	void videoFrameIsReady(QImage image);
+	void videoFrameIsReady(QImage image,QImage::Format pixels);
 };
 

@@ -8,18 +8,27 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+
     QTimer* timer = new QTimer(nullptr);
     timer->setInterval(1000 / 60);
+
     ScreenRecorder* screen = new ScreenRecorder(nullptr, timer);
     OutputDevice* audio = new OutputDevice(nullptr);
     FfmpegManager* ffmpeg = new FfmpegManager(audio, screen);
-    ffmpeg->openFile("test.wav");
+    int width = GetSystemMetrics(SM_CXSCREEN);
+    int height = GetSystemMetrics(SM_CYSCREEN);
+
+    ffmpeg->setSizeScreen({width,height});
+    ffmpeg->initFFMPEG("test.mp4");
+
     QTimer* ntimer = new QTimer(nullptr);
-    ntimer->setInterval(5000);
+    ntimer->setInterval(10000);
     ntimer->setSingleShot(true);
+
     QObject::connect(ntimer, &QTimer::timeout, [ffmpeg]() {
         ffmpeg->stop();
         });
+
     ntimer->start();
 
     return app.exec();
