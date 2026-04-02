@@ -1,7 +1,10 @@
 #pragma once
 #include <mmdeviceapi.h>
 #include <audioclient.h>
+
 #include <QtMinMax>
+#include <QThread>
+#include <QCoreApplication>
 #include <QIODevice>
 #include <QTimer>
 
@@ -25,10 +28,11 @@ public:
 private:
 	IAudioClient* _pAudioClient = nullptr;
 	IAudioCaptureClient* _pCaptureClient = nullptr;
-
+	WAVEFORMATEX* pwfx = nullptr;
 	QTimer* timer;
 
 	UINT _bufferSize;
+	int _blockAlign;
 
 	bool bExit = false;
 signals:

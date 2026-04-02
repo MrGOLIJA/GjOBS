@@ -1,5 +1,6 @@
 #include "outputdevice.h"
 #include <iostream>
+#include <QDebug>
 
 
 OutputDevice::OutputDevice(QObject *parent)
@@ -22,19 +23,27 @@ OutputDevice::OutputDevice(QObject *parent)
     hRes = device->Activate(__uuidof(IAudioClient),CLSCTX_ALL,NULL,(void**)&_pAudioClient);
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
-    WAVEFORMATEX* pwfx = (WAVEFORMATEX*)CoTaskMemAlloc(sizeof(WAVEFORMATEX));
+    WAVEFORMATEX* pwfx = nullptr;
+    _pAudioClient->GetMixFormat(&pwfx);
 
-    pwfx->wFormatTag = WAVE_FORMAT_PCM;
-    pwfx->nChannels = 2; // из block_align = 2 * 2
-    pwfx->nSamplesPerSec = SAMPLE_RATE;
-    pwfx->wBitsPerSample = 16;
+    qDebug() << pwfx->nSamplesPerSec;
+    qDebug() << pwfx->wBitsPerSample;
+    qDebug() << pwfx->nChannels;
+    qDebug() << pwfx->wFormatTag;
+    if (pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        WAVEFORMATEXTENSIBLE* wfex = (WAVEFORMATEXTENSIBLE*)pwfx;
 
-    pwfx->nBlockAlign = pwfx->nChannels * (pwfx->wBitsPerSample / 8);
-    pwfx->nAvgBytesPerSec = pwfx->nSamplesPerSec * pwfx->nBlockAlign;
+        if (wfex->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
+            qDebug() << "FLOAT";
+        else if (wfex->SubFormat == KSDATAFORMAT_SUBTYPE_PCM)
+            qDebug() << "PCM";
+    }
 
-    pwfx->cbSize = 0;
+    _blockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
 
-    hRes = _pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK,0, 0,pwfx, NULL);
+    REFERENCE_TIME bufferDuration = 10000000;
+
+    hRes = _pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, bufferDuration, 0,pwfx, NULL);
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
     hRes = _pAudioClient->GetService(__uuidof(IAudioCaptureClient),(void**)&_pCaptureClient);
@@ -60,38 +69,34 @@ qint64 OutputDevice::writeData(const char* data, qint64 len) {
 }
 
 void OutputDevice::startRead() {
+    bExit = false;
     HRESULT hRes;
 
     hRes = _pAudioClient->Start();
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
-    
-
-    timer = new QTimer(this);
-    timer->setInterval(1);
-    connect(timer, &QTimer::timeout, [this]() {
+    while(!bExit){
         HRESULT hRes;
 
         DWORD flags = 0;
 
         hRes = _pCaptureClient->GetNextPacketSize(&_bufferSize);
         if (_bufferSize == 0) {
-            Sleep(10);
-            return;
+            QThread::msleep(1);
+            QCoreApplication::processEvents();
+            continue;
         }
-
-        hRes = _pCaptureClient->GetBuffer(&_data, &_bufferSize, &flags, 0, 0);
+        quint64 pts = 0;
+        hRes = _pCaptureClient->GetBuffer(&_data, &_bufferSize, &flags, 0, &pts);
         if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-            memset(_data, 0, _bufferSize * 2 * 2);
+            memset(_data, 0, _bufferSize * _blockAlign);
         }
         if (SUCCEEDED(hRes)) {
-            emit readyBuffer(reinterpret_cast<char*>(_data), _bufferSize*2*2);
+            emit readyBuffer(reinterpret_cast<char*>(_data), _bufferSize * _blockAlign);
             //writeData(reinterpret_cast<char*>(_data), _bufferSize*2*2);
         }
         _pCaptureClient->ReleaseBuffer(_bufferSize);
-        });
-
-    timer->start();
+    }
     
 }
 
@@ -99,6 +104,5 @@ void OutputDevice::stopRead() {
     HRESULT hRes;
     hRes = _pAudioClient->Stop();
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
-
-    timer->stop();
+    bExit = true;
 }
