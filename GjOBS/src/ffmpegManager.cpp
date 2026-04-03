@@ -73,7 +73,6 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		0, 0);
 	swr_init(_swr);
 
-
 	_videoCodecCtx = avcodec_alloc_context3(_videoCodec);
 	_videoCodecCtx->width = _width;
 	_videoCodecCtx->height = _height;
@@ -83,8 +82,6 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	_videoCodecCtx->bit_rate = 4000000;
 	_videoCodecCtx->gop_size = 60;
 	_videoCodecCtx->max_b_frames = 0;
-
-	
 
 	av_opt_set(_videoCodecCtx->priv_data, "preset", "fast", 0);
 	av_opt_set(_videoCodecCtx->priv_data, "tune", "zerolatency", 0);

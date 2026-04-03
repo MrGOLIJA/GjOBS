@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(GjOBS LANGUAGES CXX)
 
-
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FFMPEG_DIR ${CMAKE_SOURCE_DIR}/ffmpeg)
@@ -23,12 +21,14 @@ set(PROJECT_SOURCES
     src/outputdevice.cpp
     src/screenrecorder.cpp
     src/ffmpegManager.cpp
+    src/settings.cpp
 )
 
 set(PROJECT_HEADERS
     hdr/ffmpegManager.h
     hdr/outputdevice.h
     hdr/screenrecorder.h
+    hdr/settings.h
 )
 
 qt_add_executable(${PROJECT_NAME}

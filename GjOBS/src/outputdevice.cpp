@@ -83,6 +83,7 @@ void OutputDevice::startRead() {
         hRes = _pCaptureClient->GetNextPacketSize(&_bufferSize);
         if (_bufferSize == 0) {
             QThread::msleep(1);
+
             QCoreApplication::processEvents();
             continue;
         }

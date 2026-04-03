@@ -11,6 +11,7 @@ extern "C"
 }
 #include "outputdevice.h"
 #include "screenrecorder.h"
+#include "settings.h"
 
 #include <atomic>
 
