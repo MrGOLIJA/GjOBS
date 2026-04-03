@@ -25,6 +25,12 @@ enum class AudioCodec {
 	FLAC = 3
 };
 
+struct CurrSettings {
+	OutputFormat format;
+	AudioCodec audioCodec;
+	VideoCodec videoCodec;
+};
+
 class Settings {
 public:
 	Settings Settings();
@@ -38,6 +44,10 @@ public:
 
 	bool setAudioCodec(AudioCodec audioCodec);
 	AudioCodec getAudioCodec() const;
+
+	CurrSettings getSettings() const {
+		return { this->_format,this->_audioCodec,this->_videoCodec };
+	}
 
 private:
 	OutputFormat _format = OutputFormat::MP4;

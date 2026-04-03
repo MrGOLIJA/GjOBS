@@ -1,5 +1,4 @@
 #include "settings.h"
-#include <QDebug>
 
 Settings::Settings(){}
 
