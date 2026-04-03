@@ -9,10 +9,10 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    QTimer* timer = new QTimer(nullptr);
-    timer->setInterval(1000 / 60);
+    QTimer* _timer = new QTimer(nullptr);
+    _timer->setInterval(1000 / 60);
 
-    ScreenRecorder* screen = new ScreenRecorder(nullptr, timer);
+    ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);
     OutputDevice* audio = new OutputDevice(nullptr);
     FfmpegManager* ffmpeg = new FfmpegManager(audio, screen);
     int width = GetSystemMetrics(SM_CXSCREEN);

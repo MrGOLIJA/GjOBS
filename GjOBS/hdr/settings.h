@@ -33,8 +33,8 @@ struct CurrSettings {
 
 class Settings {
 public:
-	Settings Settings();
-	~Settings Settings();
+	Settings();
+	~Settings();
 
 	bool setFormat(OutputFormat format);
 	OutputFormat getFormat() const;
@@ -53,4 +53,5 @@ private:
 	OutputFormat _format = OutputFormat::MP4;
 	VideoCodec _videoCodec = VideoCodec::H_264;
 	AudioCodec _audioCodec = AudioCodec::AAC;
+
 };

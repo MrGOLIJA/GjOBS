@@ -23,15 +23,15 @@ OutputDevice::OutputDevice(QObject *parent)
     hRes = device->Activate(__uuidof(IAudioClient),CLSCTX_ALL,NULL,(void**)&_pAudioClient);
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
-    WAVEFORMATEX* pwfx = nullptr;
-    _pAudioClient->GetMixFormat(&pwfx);
+    WAVEFORMATEX* _pwfx = nullptr;
+    _pAudioClient->GetMixFormat(&_pwfx);
 
-    qDebug() << pwfx->nSamplesPerSec;
-    qDebug() << pwfx->wBitsPerSample;
-    qDebug() << pwfx->nChannels;
-    qDebug() << pwfx->wFormatTag;
-    if (pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
-        WAVEFORMATEXTENSIBLE* wfex = (WAVEFORMATEXTENSIBLE*)pwfx;
+    _samplesPerSecond = _pwfx->nSamplesPerSec;
+    _bitsBerSamples = _pwfx->wBitsPerSample;
+    _channels = _pwfx->nChannels;
+    _formatTag = _pwfx->wFormatTag;
+    if (_pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        WAVEFORMATEXTENSIBLE* wfex = (WAVEFORMATEXTENSIBLE*)_pwfx;
 
         if (wfex->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
             qDebug() << "FLOAT";
@@ -39,11 +39,11 @@ OutputDevice::OutputDevice(QObject *parent)
             qDebug() << "PCM";
     }
 
-    _blockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
+    _blockAlign = _pwfx->nChannels * _pwfx->wBitsPerSample / 8;
 
     REFERENCE_TIME bufferDuration = 10000000;
 
-    hRes = _pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, bufferDuration, 0,pwfx, NULL);
+    hRes = _pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, bufferDuration, 0,_pwfx, NULL);
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
     hRes = _pAudioClient->GetService(__uuidof(IAudioCaptureClient),(void**)&_pCaptureClient);
@@ -55,6 +55,17 @@ OutputDevice::OutputDevice(QObject *parent)
 
 OutputDevice::~OutputDevice()
 {}
+
+Format OutputDevice::getFormat() const {
+    if (_pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        WAVEFORMATEXTENSIBLE* wfex = (WAVEFORMATEXTENSIBLE*)_pwfx;
+
+        if (wfex->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
+            return Format::FLOAT;
+        else if (wfex->SubFormat == KSDATAFORMAT_SUBTYPE_PCM)
+            return Format::PCM;
+    }
+}
 
 qint64 OutputDevice::readData(char* data, qint64 maxlen) {
 	qint64 size = qMin(maxlen, (qint64)_buffer.size());

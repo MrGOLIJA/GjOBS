@@ -10,6 +10,11 @@
 
 #define SAMPLE_RATE 48000
 
+enum class Format {
+	PCM = 1,
+	FLOAT = 2
+};
+
 class OutputDevice  : public QIODevice
 {
 	Q_OBJECT
@@ -23,13 +28,23 @@ public:
 	qint64 readData(char* data, qint64 maxlen) override;
 	qint64 writeData(const char* data, qint64 len) override;
 
+	DWORD getSampleRate() const { return _samplesPerSecond; }
+	WORD getBitSamples() const { return _bitsBerSamples; }
+	WORD getChannels() const { return _channels; }
+	Format getFormat() const;
+
 	void startRead();
 	void stopRead();
 private:
 	IAudioClient* _pAudioClient = nullptr;
 	IAudioCaptureClient* _pCaptureClient = nullptr;
-	WAVEFORMATEX* pwfx = nullptr;
-	QTimer* timer;
+	WAVEFORMATEX* _pwfx = nullptr;
+	QTimer* _timer;
+
+	DWORD _samplesPerSecond = 0;
+	WORD _bitsBerSamples = 0;
+	WORD _channels = 0;
+	WORD _formatTag = 0;
 
 	UINT _bufferSize;
 	int _blockAlign;

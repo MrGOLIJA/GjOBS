@@ -204,7 +204,7 @@ void FfmpegManager::setAudioPacket(const char* data, qint64 len)
 
 		av_frame_make_writable(_audioFrame);
 
-		int outSamples = swr_convert(
+		swr_convert(
 			_swr,
 			_audioFrame->data,
 			_audioFrame->nb_samples,

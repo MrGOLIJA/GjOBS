@@ -13,15 +13,15 @@ ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
 
     connect(_timer, &QTimer::timeout, this, &ScreenRecorder::getVideoFrame, Qt::DirectConnection);
 
-    _timer->start();
-    _screenCapture.start();
+    
 }
 
 ScreenRecorder::~ScreenRecorder()
 {}
 
 void ScreenRecorder::startCapture() {
-    
+    _timer->start();
+    _screenCapture.start();
 }
 
 void ScreenRecorder::stopCapture() {

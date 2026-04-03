@@ -20,7 +20,7 @@ class ScreenRecorder  : public QObject
 	Q_OBJECT
 
 public:
-	ScreenRecorder(QObject *parent,QTimer* timer);
+	ScreenRecorder(QObject *parent,QTimer* _timer);
 	~ScreenRecorder();
 
 	void startCapture();

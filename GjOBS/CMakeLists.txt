@@ -22,6 +22,8 @@ set(PROJECT_SOURCES
     src/screenrecorder.cpp
     src/ffmpegManager.cpp
     src/settings.cpp
+    src/AudioEncodersSrc/AACAudioEncoder.cpp
+
 )
 
 set(PROJECT_HEADERS
@@ -29,6 +31,9 @@ set(PROJECT_HEADERS
     hdr/outputdevice.h
     hdr/screenrecorder.h
     hdr/settings.h
+    hdr/AudioEncoder.h
+    hdr/Encoder.h
+    hdr/AudioEncodersHdr/AACAudioEncoder.h
 )
 
 qt_add_executable(${PROJECT_NAME}
