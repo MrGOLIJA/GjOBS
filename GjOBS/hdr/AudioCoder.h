@@ -1,7 +1,9 @@
 #pragma once
-#include "Encoder.h"
+#include "Coder.h"
 
-
+extern "C" {
+	#include <libswresample/swresample.h>
+}
 
 #include <QDebug>
 
@@ -9,12 +11,12 @@
 #include "outputdevice.h"
 
 
-class AudioEncoder : public Encoder{
+class AudioCoder : public Coder{
 public:
-	AudioEncoder(AVFormatContext* format, OutputDevice* device) : Encoder(format),_device(device)  {};
-	virtual ~AudioEncoder() {}
+	AudioCoder(AVFormatContext* format, OutputDevice* device) : Coder(format),_device(device)  {};
+	virtual ~AudioCoder() {}
 
-	virtual void encodeAudio(char* data, int len) = 0;
+	virtual void codeAudio(char* data, int len) = 0;
 
 protected:
 	AudioCodec _type;

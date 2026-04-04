@@ -3,14 +3,13 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswresample/swresample.h>
 #include <libavutil/opt.h>
 }
 
-class Encoder {
+class Coder {
 public:
-	Encoder(AVFormatContext* format) : _formatCtx(format) {}
-	virtual ~Encoder() {};
+	Coder(AVFormatContext* format) : _formatCtx(format) {}
+	virtual ~Coder() {};
 protected:
 	AVFormatContext* _formatCtx;
 

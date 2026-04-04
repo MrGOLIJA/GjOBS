@@ -1,8 +1,9 @@
 #include "ffmpegManager.h"
 
 
-FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen) : _audioDevice(audio), _screenRecorder(screen)
+FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings settings) : _audioDevice(audio), _screenRecorder(screen)
 {
+	_settings = settings;
 	QObject::connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
 		setAudioPacket(data, len);
 	});
@@ -29,9 +30,93 @@ double FfmpegManager::getDuration(qint64 len) {
 	return static_cast<double>(len / SAMPLE_RATE);
 }
 
+void FfmpegManager::initFormat(const char* filename) {
+	QString name = filename;
+	switch (_settings.getFormat())
+	{
+	case OutputFormat::MP4:
+		if (!name.endsWith(".mp4")) {
+			name += ".mp4";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mp4", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::MKV:
+		if (!name.endsWith(".mkv")) {
+			name += ".mkv";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "matroska", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::MOV:
+		if (!name.endsWith(".mov")) {
+			name += ".mov";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mov", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::WebM:
+		if (!name.endsWith(".webm")) {
+			name += ".webm";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "webm", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::MPEG_TS:
+		if (!name.endsWith(".ts")) {
+			name += ".ts";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mpegts", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::AVI:
+		if (!name.endsWith(".avi")) {
+			name += ".avi";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "avi", name.toUtf8().constData());
+		break;
+
+	case OutputFormat::WMV:
+		if (!name.endsWith(".wmv")) {
+			name += ".wmv";
+		}
+		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "asf", name.toUtf8().constData());
+		break;
+	default:
+		break;
+	}
+}
+
+void FfmpegManager::initAudioCodec() {
+	switch (_settings.getAudioCodec())
+	{
+	case AudioCodec::AAC:
+		_audioCoder = new AACAudioCoder(_AVFormatContext, _audioDevice);
+	case AudioCodec::NO_CODEC:
+	default:
+		_audioCoder = nullptr;
+		break;
+	}
+}
+
+void FfmpegManager::initVideoCodec() {
+	switch (_settings.getVideoCodec())
+	{
+	case VideoCodec::H_264:
+		_videoCoder = new H_264VideoCoder(_AVFormatContext, _screenRecorder);
+	case VideoCodec::NO_CODEC:
+	default:
+		_videoCoder = nullptr;
+		break;
+	}
+}
+
 void FfmpegManager::initFFMPEG(const char* filename) {
-	avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mp4", filename);
-	_audioStream = avformat_new_stream(_AVFormatContext, nullptr);
+	initFormat(filename);
+	initAudioCodec();
+	initVideoCodec();
+
+	/*_audioStream = avformat_new_stream(_AVFormatContext, nullptr);
 
 	av_channel_layout_default(&_audioStream->codecpar->ch_layout,2);
 	_audioStream->codecpar->bit_rate = SAMPLE_RATE * 2 * 2 * 8;
@@ -118,7 +203,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	_audioFrame->format = _audioCodecCtx->sample_fmt;
 	_audioFrame->sample_rate = _audioCodecCtx->sample_rate;
 	av_channel_layout_copy(&_audioFrame->ch_layout, &_audioCodecCtx->ch_layout);
-	av_frame_get_buffer(_audioFrame, 0);
+	av_frame_get_buffer(_audioFrame, 0);*/
 
 	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
 	avformat_write_header(_AVFormatContext, nullptr);
@@ -263,8 +348,6 @@ void FfmpegManager::setVideoPacket(qint64 pts) {
 
 		int64_t now = av_gettime();
 		int64_t elapsed = now - _startTime;
-
-		qDebug() << elapsed;
 
 
 		int64_t videoPts = av_rescale_q(

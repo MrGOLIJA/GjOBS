@@ -24,6 +24,7 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			return true;
 			break;
 		case AudioCodec::OPUS:
+			this->_audioCodec = AudioCodec::NO_CODEC;
 			return false;
 			break;
 		case AudioCodec::MP3:
@@ -31,9 +32,11 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			return true;
 			break;
 		case AudioCodec::FLAC:
+			this->_audioCodec = AudioCodec::NO_CODEC;
 			return false;
 			break;
 		default:
+			this->_audioCodec = AudioCodec::NO_CODEC;
 			return false;
 			break;
 		}
@@ -41,7 +44,7 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 
 	case OutputFormat::MKV:
 		this->_audioCodec = audio;
-		return false;
+		return true;
 		break;
 
 	case OutputFormat::MOV:
@@ -52,6 +55,7 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			return true;
 			break;
 		case AudioCodec::OPUS:
+			this->_audioCodec = AudioCodec::NO_CODEC;
 			return false;
 			break;
 		case AudioCodec::MP3:
@@ -59,6 +63,7 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			return true;
 			break;
 		case AudioCodec::FLAC:
+			this->_audioCodec = AudioCodec::NO_CODEC;
 			return false;
 			break;
 		default:
@@ -71,7 +76,8 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			this->_audioCodec = audio;
 			return true;
 		}
-		else return false;
+		this->_audioCodec = AudioCodec::NO_CODEC;
+		return false;
 		break;
 
 	case OutputFormat::MPEG_TS:
@@ -79,7 +85,8 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			this->_audioCodec = audio;
 			return true;
 		}
-		else return false;
+		this->_audioCodec = AudioCodec::NO_CODEC;
+		return false;
 		break;		
 
 	case OutputFormat::AVI:
@@ -87,10 +94,12 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 			this->_audioCodec = audio;
 			return true;
 		}
-		else return false;
+		this->_audioCodec = AudioCodec::NO_CODEC;
+		return false;
 		break;
 
 	case OutputFormat::WMV:
+		this->_audioCodec = AudioCodec::NO_CODEC;
 		return false;
 		break;
 	default:
@@ -116,6 +125,7 @@ bool Settings::setVideoCodec(VideoCodec video) {
 			return true;
 
 		case VideoCodec::VP9:
+			this->_videoCodec = VideoCodec::NO_CODEC;
 			return false;
 		}
 		break;
@@ -135,6 +145,7 @@ bool Settings::setVideoCodec(VideoCodec video) {
 
 		case VideoCodec::AV1:
 		case VideoCodec::VP9:
+			this->_videoCodec = VideoCodec::NO_CODEC;
 			return false;
 		}
 		break;
@@ -153,6 +164,7 @@ bool Settings::setVideoCodec(VideoCodec video) {
 		case VideoCodec::H_264:
 		case VideoCodec::H_264_NVENC:
 		case VideoCodec::H_265:
+			this->_videoCodec = VideoCodec::NO_CODEC;
 			return false;
 		}
 		break;
@@ -171,6 +183,7 @@ bool Settings::setVideoCodec(VideoCodec video) {
 
 		case VideoCodec::AV1:
 		case VideoCodec::VP9:
+			this->_videoCodec = VideoCodec::NO_CODEC;
 			return false;
 		}
 		break;
@@ -186,6 +199,7 @@ bool Settings::setVideoCodec(VideoCodec video) {
 		case VideoCodec::H_265:
 		case VideoCodec::AV1:
 		case VideoCodec::VP9:
+			this->_videoCodec = VideoCodec::NO_CODEC;
 			return false;
 		}
 		break;

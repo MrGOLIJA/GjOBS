@@ -13,6 +13,10 @@ extern "C"
 #include "screenrecorder.h"
 #include "settings.h"
 
+#include "AudioCodersHdr/AACAudioCoder.h"
+
+#include "VideoCodersHdr/H_264VideoCoder.h"
+
 #include <atomic>
 
 #include <QQueue>
@@ -25,7 +29,7 @@ class FfmpegManager : public QObject
 	Q_OBJECT
 
 public:
-	FfmpegManager(OutputDevice* audio,ScreenRecorder* screenRecorder);
+	FfmpegManager(OutputDevice* audio, ScreenRecorder* screenRecorder, Settings settings);
 	~FfmpegManager();
 
 	void initFFMPEG(const char* filename);
@@ -37,9 +41,16 @@ public:
 
 private:
 	double getDuration(qint64 len);
+	void initFormat(const char* filename);
+	void initAudioCodec();
+	void initVideoCodec();
 
 private:
 	AVFormatContext* _AVFormatContext = nullptr;
+	Settings _settings;
+	Coder* _audioCoder;
+	Coder* _videoCoder;
+
 
 	AVStream* _audioStream = nullptr;
 	AVStream* _videoStream = nullptr;

@@ -11,6 +11,7 @@ enum class OutputFormat {
 };
 
 enum class VideoCodec {
+	NO_CODEC = -1,
 	H_264 = 0,
 	H_264_NVENC = 1,
 	H_265 = 2,
@@ -19,6 +20,7 @@ enum class VideoCodec {
 };
 
 enum class AudioCodec {
+	NO_CODEC = -1,
 	AAC = 0,
 	OPUS = 1,
 	MP3 = 2,
