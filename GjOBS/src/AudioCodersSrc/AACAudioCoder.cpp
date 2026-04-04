@@ -1,7 +1,7 @@
-#include "AudioEncodersHdr/AACAudioEncoder.h"
+#include "AudioCodersHdr/AACAudioCoder.h"
 
-AACAudioEncoder::AACAudioEncoder(AVFormatContext* format, OutputDevice* device) : 
-	AudioEncoder(format,device)
+AACAudioCoder::AACAudioCoder(AVFormatContext* format, OutputDevice* device) : 
+	AudioCoder(format,device)
 {
 	_channels = _device->getChannels();
 	_sampleRate = _device->getSampleRate();
@@ -56,11 +56,11 @@ AACAudioEncoder::AACAudioEncoder(AVFormatContext* format, OutputDevice* device) 
 
 }
 
-AACAudioEncoder::~AACAudioEncoder() {
+AACAudioCoder::~AACAudioCoder() {
 	
 }
 
-void AACAudioEncoder::encodeAudio(char* data, int len) {
+void AACAudioCoder::codeAudio(char* data, int len) {
 	_buffer.append(data);
 	int totalSamples = _buffer.size() * (_channels * _bytesPerSample);
 	int frameBytes = _codecCtx->frame_size * _channels * _bytesPerSample;
