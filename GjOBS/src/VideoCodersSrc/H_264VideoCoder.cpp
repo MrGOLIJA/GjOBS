@@ -43,71 +43,72 @@ H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen)
 		_width, _height, AV_PIX_FMT_RGBA,
 		_width, _height, AV_PIX_FMT_YUV420P,
 		SWS_BILINEAR, 0, 0, 0);
+	_packet = av_packet_alloc();
+	_RGBAFrame = av_frame_alloc();
+	_YUVFrame = av_frame_alloc();
+
 }
 
 H_264VideoCoder::~H_264VideoCoder() {
-
+	av_frame_free(&_RGBAFrame);
+	av_frame_free(&_YUVFrame);
+	av_packet_free(&_packet);
 }
 
-void H_264VideoCoder::codeVideo(QImage image, QPixelFormat fmt) {
-	AVPacket* packet = av_packet_alloc();
+void H_264VideoCoder::codeVideo(QImage image) {
 	if (_startTime == 0) {
 		_startTime = av_gettime();
 	}
 
 	int64_t now = av_gettime();
 	int64_t elapsed = now - _startTime;
+	qDebug() << "elapsed" << elapsed;
+	
 
 	int64_t pts = av_rescale_q(
 		elapsed,
 		AVRational{ 1, 1000000 },
 		_codecCtx->time_base
 	);
+	_YUVFrame->format = AV_PIX_FMT_YUV420P;
+	_YUVFrame->width = _width;
+	_YUVFrame->height = _height;
+	av_frame_get_buffer(_YUVFrame, 32);
 
-	AVFrame* RGBAFrame = av_frame_alloc();
-	AVFrame* YUVFrame = av_frame_alloc();
-
-	YUVFrame->format = AV_PIX_FMT_YUV420P;
-	YUVFrame->width = _width;
-	YUVFrame->height = _height;
-	av_frame_get_buffer(YUVFrame, 32);
-
-	RGBAFrame->format = AV_PIX_FMT_RGBA;
-	RGBAFrame->width = image.width();
-	RGBAFrame->height = image.height();
+	_RGBAFrame->format = AV_PIX_FMT_RGBA;
+	_RGBAFrame->width = _width;
+	_RGBAFrame->height = _height;
 
 	av_image_fill_arrays(
-		RGBAFrame->data,
-		RGBAFrame->linesize,
+		_RGBAFrame->data,
+		_RGBAFrame->linesize,
 		image.bits(),
 		AV_PIX_FMT_RGBA,
 		image.width(),
 		image.height(),
 		1);
 
+	av_frame_make_writable(_YUVFrame);
+
 	sws_scale(_sws,
-		RGBAFrame->data,
-		RGBAFrame->linesize,
+		_RGBAFrame->data,
+		_RGBAFrame->linesize,
 		0,
 		image.height(),
-		YUVFrame->data,
-		YUVFrame->linesize);
-
-	YUVFrame->pts = pts;
-
-	avcodec_send_frame(_codecCtx, YUVFrame);
-	while (avcodec_receive_packet(_codecCtx, packet) == 0) {
+		_YUVFrame->data,
+		_YUVFrame->linesize);
+	_YUVFrame->pts = pts;
+	avcodec_send_frame(_codecCtx, _YUVFrame);
+	while (avcodec_receive_packet(_codecCtx, _packet) == 0) {
 		av_packet_rescale_ts(
-			packet,
+			_packet,	
 			_codecCtx->time_base,
 			_stream->time_base
 		);
-		qDebug() << "Write Video";
-		packet->stream_index = _stream->index;
-		av_interleaved_write_frame(_formatCtx, packet);
-		av_packet_unref(packet);
+		qDebug()<<"Write Video";
+		_packet->stream_index = _stream->index;
+		av_interleaved_write_frame(_formatCtx, _packet);
+		av_packet_unref(_packet);
 	}
-	av_frame_free(&RGBAFrame);
-	av_frame_free(&YUVFrame);
-	av_packet_free(&packet);
+	
 }
