@@ -5,13 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FFMPEG_DIR ${CMAKE_SOURCE_DIR}/ffmpeg)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Multimedia)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Multimedia Qml Concurrent)
 
 find_package(Qt${QT_VERSION_MAJOR}
     COMPONENTS
         Core
         Gui
         Multimedia
+        Qml
+        Concurrent
 )
 
 qt_standard_project_setup()
@@ -40,9 +42,17 @@ set(PROJECT_HEADERS
 
 )
 
+
 qt_add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
+)
+
+qt_add_qml_module(${PROJECT_NAME}
+    URI GjOBS
+    VERSION 1.0
+    QML_FILES
+        src/qml/main.qml
 )
 
 target_include_directories(${PROJECT_NAME} 
@@ -60,6 +70,8 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Core
         Qt::Gui
         Qt::Multimedia
+        Qt::Qml
+        Qt::Concurrent
     PRIVATE
         avformat
         avcodec
