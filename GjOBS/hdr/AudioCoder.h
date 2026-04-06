@@ -12,20 +12,21 @@ extern "C" {
 
 
 class AudioCoder : public Coder{
+	Q_OBJECT
 public:
 	AudioCoder(AVFormatContext* format, OutputDevice* device) : Coder(format),_device(device)  {};
 	virtual ~AudioCoder() {}
 
-	virtual void codeAudio(char* data, int len) = 0;
+	virtual void codeAudio(const char* data, int len) = 0;
 
 protected:
 	AudioCodec _type;
 
 	QByteArray _buffer;
 
-	SwrContext* _swr;
+	SwrContext* _swr = nullptr;
 
-	OutputDevice* _device;
+	OutputDevice* _device = nullptr;
 
 	DWORD _sampleRate;
 	WORD _channels;

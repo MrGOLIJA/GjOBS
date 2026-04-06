@@ -6,17 +6,20 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-class Coder {
+#include  <QObject>
+
+class Coder : public QObject{
+	Q_OBJECT
 public:
 	Coder(AVFormatContext* format) : _formatCtx(format) {}
 	virtual ~Coder() {};
 protected:
-	AVFormatContext* _formatCtx;
+	AVFormatContext* _formatCtx = nullptr;
 
-	const AVCodec* _codec;
-	AVCodecContext* _codecCtx;
-	AVStream* _stream;
-	AVFrame* _frame;
+	const AVCodec* _codec = nullptr;
+	AVCodecContext* _codecCtx = nullptr;
+	AVStream* _stream = nullptr;
+	AVFrame* _frame = nullptr;
 
-	int _pts;
+	int _pts= 0;
 };

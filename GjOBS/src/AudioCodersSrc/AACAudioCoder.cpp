@@ -60,9 +60,9 @@ AACAudioCoder::~AACAudioCoder() {
 	
 }
 
-void AACAudioCoder::codeAudio(char* data, int len) {
-	_buffer.append(data);
-	int totalSamples = _buffer.size() * (_channels * _bytesPerSample);
+void AACAudioCoder::codeAudio(const char* data, int len) {
+	_buffer.append(data,len);
+	int totalSamples = _buffer.size() / (_channels * _bytesPerSample);
 	int frameBytes = _codecCtx->frame_size * _channels * _bytesPerSample;
 	while (totalSamples >= _codecCtx->frame_size) {
 		QByteArray chunk = _buffer.left(frameBytes);
@@ -78,7 +78,7 @@ void AACAudioCoder::codeAudio(char* data, int len) {
 
 		av_frame_make_writable(_frame);
 
-		swr_convert(
+		qDebug()<<swr_convert(
 			_swr,
 			_frame->data,
 			_frame->nb_samples,
@@ -87,7 +87,6 @@ void AACAudioCoder::codeAudio(char* data, int len) {
 
 		_frame->pts = _pts;
 		_pts += _codecCtx->frame_size;
-
 		avcodec_send_frame(_codecCtx, _frame);
 
 		AVPacket* packet = av_packet_alloc();
@@ -96,6 +95,7 @@ void AACAudioCoder::codeAudio(char* data, int len) {
 			packet->stream_index = _stream->index;
 			packet->dts = packet->pts;
 			packet->duration = _codecCtx->frame_size;
+			qDebug() << "Write Audio";
 			av_packet_rescale_ts(
 				packet,
 				_codecCtx->time_base,
