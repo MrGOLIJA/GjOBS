@@ -1,5 +1,6 @@
 #pragma once 
 #include "Coder.h"
+#include <Windows.h>
 
 extern "C" {
 	#include <libswscale/swscale.h>
@@ -39,6 +40,7 @@ public:
 				break;
 			}
 			QImage image = imageQueue.dequeue();
+			qDebug() << "size queue" << imageQueue.size();
 			mutex.unlock();
 			codeVideo(image);
 		}
@@ -63,8 +65,13 @@ protected:
 	QWaitCondition cond;
 	bool running = true;
 
-	int _width = 0;
-	int _height = 0;
+	int _width = GetSystemMetrics(SM_CXSCREEN);
+	int _height = GetSystemMetrics(SM_CYSCREEN);
 	int64_t _startTime = 0;
+
+	AVPacket* _packet = nullptr;
+	AVFrame* _YUVFrame = nullptr;
+	AVFrame* _RGBAFrame = nullptr;
+	int _pts = 0;
 
 };
