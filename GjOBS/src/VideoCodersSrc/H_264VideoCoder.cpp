@@ -1,10 +1,8 @@
 #include "VideoCodersHdr/H_264VideoCoder.h"
-#include <Windows.h>
+
 
 H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen) : VideoCoder(format,screen) 
 {
-	_width = GetSystemMetrics(SM_CXSCREEN);
-	_height = GetSystemMetrics(SM_CYSCREEN);
 
 	_stream = avformat_new_stream(_formatCtx, nullptr);
 	_stream->time_base = AVRational{ 1, 60 };
@@ -43,10 +41,15 @@ H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen)
 		_width, _height, AV_PIX_FMT_RGBA,
 		_width, _height, AV_PIX_FMT_YUV420P,
 		SWS_BILINEAR, 0, 0, 0);
+
 	_packet = av_packet_alloc();
 	_RGBAFrame = av_frame_alloc();
 	_YUVFrame = av_frame_alloc();
 
+	_YUVFrame->format = AV_PIX_FMT_YUV420P;
+	_YUVFrame->width = _width;
+	_YUVFrame->height = _height;
+	av_frame_get_buffer(_YUVFrame, 32);
 }
 
 H_264VideoCoder::~H_264VideoCoder() {
@@ -57,10 +60,10 @@ H_264VideoCoder::~H_264VideoCoder() {
 
 void H_264VideoCoder::codeVideo(QImage image) {
 	if (_startTime == 0) {
-		_startTime = av_gettime();
+		_startTime = av_gettime_relative();
 	}
 
-	int64_t now = av_gettime();
+	int64_t now = av_gettime_relative();
 	int64_t elapsed = now - _startTime;
 	qDebug() << "elapsed" << elapsed;
 	
@@ -70,10 +73,6 @@ void H_264VideoCoder::codeVideo(QImage image) {
 		AVRational{ 1, 1000000 },
 		_codecCtx->time_base
 	);
-	_YUVFrame->format = AV_PIX_FMT_YUV420P;
-	_YUVFrame->width = _width;
-	_YUVFrame->height = _height;
-	av_frame_get_buffer(_YUVFrame, 32);
 
 	_RGBAFrame->format = AV_PIX_FMT_RGBA;
 	_RGBAFrame->width = _width;
