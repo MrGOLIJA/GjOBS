@@ -120,6 +120,9 @@ void FfmpegManager::initVideoCodec() {
 	case VideoCodec::H_264:
 		_videoCoder = new H_264VideoCoder(_AVFormatContext, _screenRecorder);
 		break;
+	case VideoCodec::H_264_NVENC:
+		_videoCoder = new H_264_NVENC_VideoCoder(_AVFormatContext, _screenRecorder);
+		break;
 	case VideoCodec::NO_CODEC:
 	default:
 		_videoCoder = nullptr;
