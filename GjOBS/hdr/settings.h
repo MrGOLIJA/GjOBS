@@ -33,6 +33,11 @@ struct CurrSettings {
 	VideoCodec videoCodec;
 };
 
+enum class Rend{
+	CPU = 0,
+	GPU = 1
+};
+
 class Settings {
 public:
 	Settings();
@@ -51,9 +56,13 @@ public:
 		return { this->_format,this->_audioCodec,this->_videoCodec };
 	}
 
+	void setRend(Rend rend) { _rend = rend; }
+	Rend getRend() const { return _rend; }
+
 private:
 	OutputFormat _format = OutputFormat::MP4;
 	VideoCodec _videoCodec = VideoCodec::H_264;
 	AudioCodec _audioCodec = AudioCodec::AAC;
 
+	Rend _rend = Rend::CPU;
 };
