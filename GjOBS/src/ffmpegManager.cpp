@@ -6,8 +6,13 @@ FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Setting
 {
 	_settings = settings;
 	
-	QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startCapture,Qt::QueuedConnection);
-	QObject::connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead,Qt::QueuedConnection);
+	QObject::connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead, Qt::QueuedConnection);
+	if (_settings.getRend() ==  Rend::CPU) {
+		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startCPUCapture,Qt::QueuedConnection);
+	}
+	else {
+		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startGPUCapture, Qt::QueuedConnection);
+	}
 }
 
 FfmpegManager::~FfmpegManager() {
@@ -25,23 +30,37 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	initVideoCodec();
 
 	QObject::connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
-
 		_audioCoder->codeAudio(data, len);
 		});
-	QObject::connect(_screenRecorder, &ScreenRecorder::videoFrameIsReady, [this](QImage image, QImage::Format fmt) {
-		_videoCoder->appendImage(image);
-		});
-	QObject::connect(this, &FfmpegManager::startWrite, [this]() {
-		coderThread = new QThread();
-		_videoCoder->moveToThread(coderThread);
-		QObject::connect(coderThread, &QThread::started, _videoCoder, &VideoCoder::run);
-		coderThread->start();
-		});
+	if (_settings.getRend() == Rend::CPU) {
+		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
+			_videoCoder->appendImage(image);
+			});
+
+		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
+			coderThread = new QThread();
+			_videoCoder->moveToThread(coderThread);
+			QObject::connect(coderThread, &QThread::started, _videoCoder, &VideoCoder::runCPU);
+			coderThread->start();
+			});
+	}
+	else {
+		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface image) {
+			_videoCoder->appendImage(image);
+			});
+
+		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
+			coderThread = new QThread();
+			_videoCoder->moveToThread(coderThread);
+			QObject::connect(coderThread, &QThread::started, _videoCoder, &VideoCoder::runGPU);
+			coderThread->start();
+			});
+	}
+
 	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
 	avformat_write_header(_AVFormatContext, nullptr);
 
 	emit startWrite();
-
 }
 
 void FfmpegManager::initFormat(const char* filename) {
