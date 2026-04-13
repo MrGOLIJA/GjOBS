@@ -23,7 +23,7 @@ OutputDevice::OutputDevice(QObject *parent)
     hRes = device->Activate(__uuidof(IAudioClient),CLSCTX_ALL,NULL,(void**)&_pAudioClient);
     if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
-    _pwfx = nullptr;
+    WAVEFORMATEX* _pwfx = nullptr;
     _pAudioClient->GetMixFormat(&_pwfx);
 
     _samplesPerSecond = _pwfx->nSamplesPerSec;

@@ -26,7 +26,6 @@ set(PROJECT_SOURCES
     src/settings.cpp
     src/AudioCodersSrc/AACAudioCoder.cpp
     src/VideoCodersSrc/H_264VideoCoder.cpp
-    src/VideoCodersSrc/H_264_NVENC_VideoCoder.cpp
 
 )
 
@@ -40,7 +39,6 @@ set(PROJECT_HEADERS
     hdr/Coder.h
     hdr/AudioCodersHdr/AACAudioCoder.h
     hdr/VideoCodersHdr/H_264VideoCoder.h
-    hdr/VideoCodersHdr/H_264_NVENC_VideoCoder.h
 
 )
 
@@ -80,6 +78,4 @@ target_link_libraries(${PROJECT_NAME}
         swscale
         swresample
         avutil
-        avfilter
-        runtimeobject
 )

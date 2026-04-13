@@ -14,12 +14,12 @@ int main(int argc, char *argv[])
     engine.load(QUrl(QStringLiteral("qrc:/GjOBS/src/qml/main.qml")));*/
 
     QTimer* _timer = new QTimer(nullptr);
-    _timer->setInterval(1000 / 100);
+    _timer->setInterval(1000 / 60);
 
     Settings settings;
     settings.setFormat(OutputFormat::MP4);
     settings.setAudioCodec(AudioCodec::AAC);
-    settings.setVideoCodec(VideoCodec::H_264_NVENC);
+    settings.setVideoCodec(VideoCodec::H_264);
 
     ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);
     OutputDevice* audio = new OutputDevice(nullptr);

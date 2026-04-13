@@ -122,15 +122,17 @@ H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
 	av_packet_free(&_packet);
 }
 
-void H_264_NVENC_VideoCoder(GPUTsImage image) {
+void H_264_NVENC_VideoCoder::codeVideo(QImage img) {
+	QImage image = img.convertToFormat(QImage::Format_RGBA8888);
+	if (_startTime == 0) {
+		_startTime = av_gettime_relative();
+	}
 
-}
-
-void H_264_NVENC_VideoCoder::codeVideo(CPUTsImage img) {
-	QImage image = img.image.convertToFormat(QImage::Format_RGBA8888);
+	int64_t now = av_gettime_relative();
+	int64_t elapsed = now - _startTime;
 	
 	int64_t pts = av_rescale_q(
-		img.time.count(),
+		elapsed,
 		AVRational{ 1, 1000000 },
 		_codecCtx->time_base
 	);
