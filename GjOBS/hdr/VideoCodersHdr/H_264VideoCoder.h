@@ -11,6 +11,7 @@ public:
 	~H_264VideoCoder() override;
 
 protected:
-	void codeVideo(QImage image) override;
+	void codeVideo(CPUTsImage image) override;
+	void codeVideo(GPUTsImage image) override;
 
 };
