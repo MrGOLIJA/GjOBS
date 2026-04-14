@@ -16,7 +16,6 @@ extern "C" {
 #include <QWaitCondition>
 #include <QPixelFormat>
 
-using GPU_Image = winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface;
 
 struct CPUTsImage{
 	QImage image;
@@ -85,24 +84,10 @@ public:
 		mutex.unlock();
 	}
 	
-	AVFrame* convertD3DtoAVFrame(GPU_Image image) {
-		auto dxgiSurface = image.as<IDXGISurface>();
-		if (!dxgiSurface) return nullptr;
-
-		winrt::com_ptr<ID3D11Texture2D> d3dTexture;
-		dxgiSurface->QueryInterface(__uuidof(ID3D11Texture2D), d3dTexture.put_void());
-		if (!d3dTexture) return nullptr;
-
-		winrt::com_ptr<ID3D11Device> d3dDevice;
-		dxgiSurface->GetDevice(__uuidof(ID3D11Device), d3dDevice.put_void());
-		if (!d3dDevice) return nullptr;
-
-		winrt::com_ptr<ID3D11DeviceContext> context;
-		d3dDevice->GetImmediateContext(context.put());
-		if (!context) return nullptr;
+	AVFrame* convertD3DtoAVFrame(GPU_Image texture) {
 
 		D3D11_TEXTURE2D_DESC texDesc;
-		d3dTexture->GetDesc(&texDesc);
+		texture->GetDesc(&texDesc);
 
 		AVPixelFormat pixFmt;
 		switch (texDesc.Format) {
@@ -143,17 +128,17 @@ public:
 		stagingDesc.MiscFlags = 0;
 
 		winrt::com_ptr<ID3D11Texture2D> stagingTexture;
-		HRESULT hr = d3dDevice->CreateTexture2D(&stagingDesc, nullptr, stagingTexture.put());
+		HRESULT hr = _screen->getDevice()->CreateTexture2D(&stagingDesc, nullptr, stagingTexture.put());
 		if (FAILED(hr)) {
 			av_freep(&frame->data[0]);
 			av_frame_free(&frame);
 			return nullptr;
 		}
 
-		context->CopyResource(stagingTexture.get(), d3dTexture.get());
+		_screen->getContext()->CopyResource(stagingTexture.get(), texture.get());
 
 		D3D11_MAPPED_SUBRESOURCE mapped;
-		hr = context->Map(stagingTexture.get(), 0, D3D11_MAP_READ, 0, &mapped);
+		hr = _screen->getContext()->Map(stagingTexture.get(), 0, D3D11_MAP_READ, 0, &mapped);
 		if (FAILED(hr)) {
 			av_freep(&frame->data[0]);
 			av_frame_free(&frame);
@@ -185,7 +170,7 @@ public:
 			}
 		}
 
-		context->Unmap(stagingTexture.get(), 0);
+		_screen->getContext()->Unmap(stagingTexture.get(), 0);
 
 		return frame;
 	}
