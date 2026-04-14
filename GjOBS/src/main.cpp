@@ -19,7 +19,8 @@ int main(int argc, char *argv[])
     Settings settings;
     settings.setFormat(OutputFormat::MP4);
     settings.setAudioCodec(AudioCodec::AAC);
-    settings.setVideoCodec(VideoCodec::H_264_NVENC);
+    settings.setVideoCodec(VideoCodec::H_264);
+    settings.setRend(Rend::GPU);
 
     ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);
     OutputDevice* audio = new OutputDevice(nullptr);

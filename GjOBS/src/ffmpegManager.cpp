@@ -45,7 +45,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 			});
 	}
 	else {
-		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface image) {
+		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](GPU_Image image) {
 			_videoCoder->appendImage(image);
 			});
 

@@ -122,7 +122,7 @@ H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
 	av_packet_free(&_packet);
 }
 
-void H_264_NVENC_VideoCoder(GPUTsImage image) {
+void H_264_NVENC_VideoCoder::codeVideo(GPUTsImage image) {
 
 }
 
