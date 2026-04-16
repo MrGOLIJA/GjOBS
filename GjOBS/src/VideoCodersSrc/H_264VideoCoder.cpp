@@ -3,9 +3,10 @@
 
 H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen) : VideoCoder(format,screen) 
 {
-
 	_stream = avformat_new_stream(_formatCtx, nullptr);
-	_stream->time_base = AVRational{ 1, 60 };
+	_stream->time_base = AVRational{ 1, 100 };
+	_stream->avg_frame_rate = AVRational{ 100, 1 };
+	_stream->r_frame_rate = AVRational{ 100, 1 };
 	_stream->codecpar->codec_id = AV_CODEC_ID_H264;
 	_stream->codecpar->format = AV_PIX_FMT_YUV420P;
 	_stream->codecpar->width = _width;
@@ -17,11 +18,11 @@ H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen)
 	_codecCtx = avcodec_alloc_context3(_codec);
 	_codecCtx->width = _width;
 	_codecCtx->height = _height;
-	_codecCtx->time_base = AVRational{ 1,60 };
-	_codecCtx->framerate = AVRational{ 60,1 };
+	_codecCtx->time_base = AVRational{ 1,100 };
+	_codecCtx->framerate = AVRational{ 100,1 };
 	_codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
 	_codecCtx->bit_rate = 4000000;
-	_codecCtx->gop_size = 60;
+	_codecCtx->gop_size = 100;
 	_codecCtx->max_b_frames = 0;
 
 	av_opt_set(_codecCtx->priv_data, "preset", "fast", 0);
@@ -36,8 +37,6 @@ H_264VideoCoder::H_264VideoCoder(AVFormatContext* format,ScreenRecorder* screen)
 		_stream->codecpar,
 		_codecCtx
 	);
-
-
 	_packet = av_packet_alloc();
 	_RGBAFrame = av_frame_alloc();
 	_YUVFrame = av_frame_alloc();
@@ -55,12 +54,6 @@ H_264VideoCoder::~H_264VideoCoder() {
 }
 
 void H_264VideoCoder::codeVideo(GPUTsImage image) {
-	int64_t pts = av_rescale_q(
-		image.time.count(),
-		AVRational{ 1, 1000000 },
-		_codecCtx->time_base
-	);
-
 	AVFrame* d3dFrame = convertD3DtoAVFrame(image.image);
 	if (!_sws) {
 		_sws = sws_getContext(
@@ -68,19 +61,15 @@ void H_264VideoCoder::codeVideo(GPUTsImage image) {
 			_width, _height, _codecCtx->pix_fmt,
 			SWS_BILINEAR, 0, 0, 0);
 	}
-
-	AVFrame* yuvFrame = av_frame_alloc();
-	yuvFrame->format = _codecCtx->pix_fmt;
-	yuvFrame->width = _codecCtx->width;
-	yuvFrame->height = _codecCtx->height;
-	av_image_alloc(yuvFrame->data, yuvFrame->linesize,
+	av_frame_make_writable(_YUVFrame);
+	av_image_alloc(_YUVFrame->data, _YUVFrame->linesize,
 		_codecCtx->width, _codecCtx->height,
 		_codecCtx->pix_fmt, 1);
 
 	sws_scale(_sws, d3dFrame->data, d3dFrame->linesize,
 		0, d3dFrame->height,
-		yuvFrame->data, yuvFrame->linesize);
-	yuvFrame->pts = pts;
+		_YUVFrame->data, _YUVFrame->linesize);
+	_YUVFrame->pts = _pts++;
 
 	avcodec_send_frame(_codecCtx, _YUVFrame);
 	while (avcodec_receive_packet(_codecCtx, _packet) == 0) {
@@ -89,24 +78,16 @@ void H_264VideoCoder::codeVideo(GPUTsImage image) {
 			_codecCtx->time_base,
 			_stream->time_base
 		);
-		qDebug() << "Write Video";
 		_packet->stream_index = _stream->index;
 		av_interleaved_write_frame(_formatCtx, _packet);
 		av_packet_unref(_packet);
 	}
+	av_frame_free(&d3dFrame);
+
+
 }
 
 void H_264VideoCoder::codeVideo(CPUTsImage image) {
-	if (_startTime == 0) {
-		_startTime = av_gettime_relative();
-	}
-
-	int64_t pts = av_rescale_q(
-		image.time.count(),
-		AVRational{ 1, 1000000 },
-		_codecCtx->time_base
-	);
-
 	if (!_sws) {
 		_sws = sws_getContext(
 			_width, _height, AV_PIX_FMT_RGBA,
@@ -136,7 +117,7 @@ void H_264VideoCoder::codeVideo(CPUTsImage image) {
 		image.image.height(),
 		_YUVFrame->data,
 		_YUVFrame->linesize);
-	_YUVFrame->pts = pts;
+	_YUVFrame->pts = _pts++;
 	avcodec_send_frame(_codecCtx, _YUVFrame);
 	while (avcodec_receive_packet(_codecCtx, _packet) == 0) {
 		av_packet_rescale_ts(
@@ -144,7 +125,6 @@ void H_264VideoCoder::codeVideo(CPUTsImage image) {
 			_codecCtx->time_base,
 			_stream->time_base
 		);
-		qDebug()<<"Write Video";
 		_packet->stream_index = _stream->index;
 		av_interleaved_write_frame(_formatCtx, _packet);
 		av_packet_unref(_packet);
