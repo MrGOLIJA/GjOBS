@@ -60,6 +60,7 @@ public:
 			mutex.unlock();
 			codeVideo(image);
 		}
+		emit finished();
 	}
 
 	void runGPU() {
@@ -69,12 +70,21 @@ public:
 				cond.wait(&mutex);
 			}
 			if (!running && GPUimageQueue.isEmpty()) {
+				avcodec_send_frame(_codecCtx, nullptr);
+
+				while (avcodec_receive_packet(_codecCtx, _packet) == 0) {
+					av_packet_rescale_ts(_packet, _codecCtx->time_base, _stream->time_base);
+					_packet->stream_index = _stream->index;
+					av_interleaved_write_frame(_formatCtx, _packet);
+					av_packet_unref(_packet);
+				}
 				break;
 			}
 			auto image = GPUimageQueue.dequeue();
 			mutex.unlock();
 			codeVideo(image);
 		}
+		emit finished();
 	}
 
 	void stop() {
@@ -196,5 +206,8 @@ protected:
 	AVFrame* _YUVFrame = nullptr;
 	AVFrame* _RGBAFrame = nullptr;
 	int _pts = 0;
+
+	std::chrono::microseconds _time;
+	bool time = false;
 
 };
