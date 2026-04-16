@@ -27,4 +27,6 @@ private:
 	AVFilterContext* _buffersrc_ctx = nullptr;
 	AVFilterContext* _buffersink_ctx = nullptr;
 	AVFilterContext* _formatFilter = nullptr;
+
+	bool time = false;
 };

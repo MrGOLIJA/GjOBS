@@ -12,6 +12,6 @@ public:
 
 protected:
 	void codeVideo(CPUTsImage image) override;
-	void codeVideo(GPUTsImage image) override;
+	void codeVideo(GPUTsImage image) override;	
 
 };
