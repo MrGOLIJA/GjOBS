@@ -22,4 +22,6 @@ protected:
 	AVFrame* _frame = nullptr;
 
 	int _pts= 0;
+signals:
+	void finished();
 };
