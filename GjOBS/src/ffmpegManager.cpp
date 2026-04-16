@@ -32,6 +32,11 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	QObject::connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
 		_audioCoder->codeAudio(data, len);
 		});
+
+	QObject::connect(_videoCoder, &Coder::finished, [this]() {
+		av_write_trailer(_AVFormatContext);
+		});
+
 	if (_settings.getRend() == Rend::CPU) {
 		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
 			_videoCoder->appendImage(image);
@@ -157,8 +162,6 @@ void FfmpegManager::stop() {
 
 	_audioDevice->stopRead();
 	_screenRecorder->stopCapture();
-
-	av_write_trailer(_AVFormatContext);
 }
 
 
