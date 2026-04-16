@@ -123,18 +123,17 @@ H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
 }
 
 void H_264_NVENC_VideoCoder::codeVideo(GPUTsImage image) {
+	AVFrame* d3dFrame = convertD3DtoAVFrame(image.image);
 
+	if (!_sws) {
+		_sws = sws_getContext(_width,_height,AVPixelFormat(d3dFrame->format),
+			_height,_width
+		)
+	}
 }
 
 void H_264_NVENC_VideoCoder::codeVideo(CPUTsImage img) {
 	QImage image = img.image.convertToFormat(QImage::Format_RGBA8888);
-	
-	int64_t pts = av_rescale_q(
-		img.time.count(),
-		AVRational{ 1, 1000000 },
-		_codecCtx->time_base
-	);
-
 	_RGBAFrame->format = AV_PIX_FMT_RGBA;
 	_RGBAFrame->width = _width;
 	_RGBAFrame->height = _height;
@@ -146,7 +145,7 @@ void H_264_NVENC_VideoCoder::codeVideo(CPUTsImage img) {
 		image.width(),
 		image.height(),
 		1);
-	_RGBAFrame->pts = pts;
+	_RGBAFrame->pts = _pts++;
 	
 	av_buffersrc_add_frame(_buffersrc_ctx, _RGBAFrame);
 	av_frame_unref(_outFrame);
