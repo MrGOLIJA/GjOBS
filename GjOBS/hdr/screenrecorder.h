@@ -4,6 +4,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <windows.graphics.capture.interop.h>
 #include <windows.graphics.directx.direct3d11.interop.h>
+
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
 
