@@ -1,19 +1,42 @@
 ﻿import QtQuick
 import QtQuick.Window
+import QtQuick.Layouts
 
 Window {
     visible: true
-    width: 200
-    height: 100
+    width: Screen.width / 2
+    height: Screen.height / 2
+    minimumWidth: Screen.width / 3
+    minimumHeight: chooseScreen.height + toolsLayout.height + 50
     title: "GjOBS"
+    id: mainWindow
+
+    property real scale: Screen.devicePixelRatio
 
     Rectangle {
         anchors.fill: parent
-        color: "red"
+        color: "#525252"
 
-        Text {
-            anchors.centerIn: parent
-            text: "Hello, World!"
+        ColumnLayout {
+            id: mainColumn
+            spacing: 5
+            anchors.fill: parent
+            Rectangle {
+                id: screenLayout
+                color: "gray"
+                Layout.fillWidth: true
+                Layout.preferredHeight: (mainWindow.height - chooseScreen.height
+                                         - toolsLayout.height) * scale
+            }
+            Rectangle {
+                id: chooseScreen
+                color: "blue"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 50 * scale
+            }
+            ToolsLayout {
+                id: toolsLayout
+            }
         }
     }
 }
