@@ -64,7 +64,9 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 
 	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
 	avformat_write_header(_AVFormatContext, nullptr);
+}
 
+void FfmpegManager::start() {
 	emit startWrite();
 }
 
