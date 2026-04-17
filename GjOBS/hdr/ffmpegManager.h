@@ -35,6 +35,7 @@ public:
 
 	void initFFMPEG(const char* filename);
 	void stop();
+	void start();
 
 private:
 	void initFormat(const char* filename);
