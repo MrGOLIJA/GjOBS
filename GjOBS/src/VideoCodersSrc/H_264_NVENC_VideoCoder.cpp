@@ -3,7 +3,9 @@
 H_264_NVENC_VideoCoder::H_264_NVENC_VideoCoder(AVFormatContext* format, ScreenRecorder* screen) : VideoCoder(format, screen)
 {
 	_stream = avformat_new_stream(_formatCtx, nullptr);
-	_stream->time_base = AVRational{ 1, 60 };
+	_stream->time_base = AVRational{ 1, 100 };
+	_stream->avg_frame_rate = AVRational{ 100, 1 };
+	_stream->r_frame_rate = AVRational{ 100, 1 };
 	_stream->codecpar->codec_id = AV_CODEC_ID_H264;
 	_stream->codecpar->format = AV_PIX_FMT_NV12;
 	_stream->codecpar->width = _width;
@@ -15,14 +17,11 @@ H_264_NVENC_VideoCoder::H_264_NVENC_VideoCoder(AVFormatContext* format, ScreenRe
 	_codecCtx = avcodec_alloc_context3(_codec);
 	_codecCtx->width = _width;
 	_codecCtx->height = _height;
-	_codecCtx->time_base = AVRational{ 1,60 };
-	_codecCtx->framerate = AVRational{ 60,1 };
+	_codecCtx->time_base = AVRational{ 1,100 };
+	_codecCtx->framerate = AVRational{ 100,1 };
 	_codecCtx->pix_fmt = AV_PIX_FMT_CUDA;
-	_codecCtx->bit_rate = 35000000;
-	_codecCtx->rc_max_rate = 45000000;
-	_codecCtx->rc_buffer_size = 70000000;
-	_codecCtx->gop_size = 60;
-	_codecCtx->max_b_frames = 3;
+	_codecCtx->gop_size = 100;
+	_codecCtx->max_b_frames = 0;
 
 	av_opt_set(_codecCtx->priv_data, "preset", "p6", 0);
 	av_opt_set(_codecCtx->priv_data, "profile", "high", 0);
@@ -124,12 +123,23 @@ H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
 
 void H_264_NVENC_VideoCoder::codeVideo(GPUTsImage image) {
 	AVFrame* d3dFrame = convertD3DtoAVFrame(image.image);
-
-	if (!_sws) {
-		_sws = sws_getContext(_width,_height,AVPixelFormat(d3dFrame->format),
-			_height,_width
-		)
+	d3dFrame->pts = _pts++;
+	av_buffersrc_add_frame(_buffersrc_ctx, d3dFrame);
+	av_frame_unref(_outFrame);
+	while (av_buffersink_get_frame(_buffersink_ctx, _outFrame) == 0) {
+		avcodec_send_frame(_codecCtx, _outFrame);
+		while (avcodec_receive_packet(_codecCtx, _packet) == 0) {
+			av_packet_rescale_ts(
+				_packet,
+				_codecCtx->time_base,
+				_stream->time_base
+			);
+			_packet->stream_index = _stream->index;
+			av_interleaved_write_frame(_formatCtx, _packet);
+			av_packet_unref(_packet);
+		}
 	}
+	av_frame_free(&d3dFrame);
 }
 
 void H_264_NVENC_VideoCoder::codeVideo(CPUTsImage img) {
