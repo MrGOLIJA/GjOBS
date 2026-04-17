@@ -44,7 +44,6 @@ set(PROJECT_HEADERS
 
 )
 
-
 qt_add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
@@ -54,7 +53,8 @@ qt_add_qml_module(${PROJECT_NAME}
     URI GjOBS
     VERSION 1.0
     QML_FILES
-        src/qml/main.qml
+        src/qml/Main.qml
+        src/qml/ToolsLayout.qml
 )
 
 target_include_directories(${PROJECT_NAME} 
