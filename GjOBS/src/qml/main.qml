@@ -36,6 +36,9 @@ Window {
             }
             ToolsLayout {
                 id: toolsLayout
+                Layout.fillWidth: true
+                Layout.preferredHeight: 250 * scale
+
             }
         }
     }
