@@ -30,10 +30,11 @@ class FfmpegManager : public QObject
 	Q_OBJECT
 
 public:
-	FfmpegManager(OutputDevice* audio, ScreenRecorder* screenRecorder, Settings settings);
+	FfmpegManager(OutputDevice* audio, ScreenRecorder* screenRecorder, Settings* settings);
 	~FfmpegManager();
 
 	void initFFMPEG(const char* filename);
+public slots:
 	void stop();
 	void start();
 
@@ -44,7 +45,7 @@ private:
 
 private:
 	AVFormatContext* _AVFormatContext = nullptr;
-	Settings _settings;
+	Settings* _settings;
 	AudioCoder* _audioCoder;
 	VideoCoder* _videoCoder;
 
