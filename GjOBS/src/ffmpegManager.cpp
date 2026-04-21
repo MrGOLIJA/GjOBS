@@ -2,12 +2,10 @@
 #include <QtConcurrentRun>
 
 
-FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings settings) : _audioDevice(audio), _screenRecorder(screen)
+FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings* settings) : _audioDevice(audio), _screenRecorder(screen), _settings(settings)
 {
-	_settings = settings;
-	
 	QObject::connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead, Qt::QueuedConnection);
-	if (_settings.getRend() ==  Rend::CPU) {
+	if (_settings->getRend() == Settings::Rend::CPU) {
 		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startCPUCapture,Qt::QueuedConnection);
 	}
 	else {
@@ -37,7 +35,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		av_write_trailer(_AVFormatContext);
 		});
 
-	if (_settings.getRend() == Rend::CPU) {
+	if (_settings->getRend() == Settings::Rend::CPU) {
 		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
 			_videoCoder->appendImage(image);
 			});
@@ -72,51 +70,51 @@ void FfmpegManager::start() {
 
 void FfmpegManager::initFormat(const char* filename) {
 	QString name = filename;
-	switch (_settings.getFormat())
+	switch (_settings->getFormat())
 	{
-	case OutputFormat::MP4:
+	case Settings::OutputFormat::MP4:
 		if (!name.endsWith(".mp4")) {
 			name += ".mp4";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mp4", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::MKV:
+	case Settings::OutputFormat::MKV:
 		if (!name.endsWith(".mkv")) {
 			name += ".mkv";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "matroska", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::MOV:
+	case Settings::OutputFormat::MOV:
 		if (!name.endsWith(".mov")) {
 			name += ".mov";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mov", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::WebM:
+	case Settings::OutputFormat::WebM:
 		if (!name.endsWith(".webm")) {
 			name += ".webm";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "webm", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::MPEG_TS:
+	case Settings::OutputFormat::MPEG_TS:
 		if (!name.endsWith(".ts")) {
 			name += ".ts";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "mpegts", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::AVI:
+	case Settings::OutputFormat::AVI:
 		if (!name.endsWith(".avi")) {
 			name += ".avi";
 		}
 		avformat_alloc_output_context2(&_AVFormatContext, nullptr, "avi", name.toUtf8().constData());
 		break;
 
-	case OutputFormat::WMV:
+	case Settings::OutputFormat::WMV:
 		if (!name.endsWith(".wmv")) {
 			name += ".wmv";
 		}
@@ -128,12 +126,12 @@ void FfmpegManager::initFormat(const char* filename) {
 }
 
 void FfmpegManager::initAudioCodec() {
-	switch (_settings.getAudioCodec())
+	switch (_settings->getAudioCodec())
 	{
-	case AudioCodec::AAC:
+	case Settings::AudioCodec::AAC:
 		_audioCoder = new AACAudioCoder(_AVFormatContext, _audioDevice);
 		break;
-	case AudioCodec::NO_CODEC:
+	case Settings::AudioCodec::NO_CODEC:
 	default:
 		_audioCoder = nullptr;
 		break;
@@ -141,15 +139,15 @@ void FfmpegManager::initAudioCodec() {
 }
 
 void FfmpegManager::initVideoCodec() {
-	switch (_settings.getVideoCodec())
+	switch (_settings->getVideoCodec())
 	{
-	case VideoCodec::H_264:
+	case Settings::VideoCodec::H_264:
 		_videoCoder = new H_264VideoCoder(_AVFormatContext, _screenRecorder);
 		break;
-	case VideoCodec::H_264_NVENC:
+	case Settings::VideoCodec::H_264_NVENC:
 		_videoCoder = new H_264_NVENC_VideoCoder(_AVFormatContext, _screenRecorder);
 		break;
-	case VideoCodec::NO_CODEC:
+	case Settings::VideoCodec::NO_CODEC:
 	default:
 		_videoCoder = nullptr;
 		break;

@@ -34,15 +34,16 @@ public:
 	ScreenRecorder(QObject *parent,QTimer* _timer);
 	~ScreenRecorder();
 
-	void startGPUCapture();
-	void startCPUCapture();
-	void stopCapture();
-
 	winrt::impl::com_ref<IDXGISurface> getSurface() const { return _dxgiSurface; }
 	winrt::com_ptr<ID3D11Device> getDevice() const { return _d3dDevice; }
 	winrt::com_ptr<ID3D11DeviceContext> getContext() const { return _context; }
 public slots:
 	void getVideoFrame();
+
+	void startGPUCapture();
+	void startCPUCapture();
+
+	void stopCapture();
 private:
 
 	winrt::com_ptr<ID3D11Device> d3dDevice;
