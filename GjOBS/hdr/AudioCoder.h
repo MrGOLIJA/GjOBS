@@ -20,8 +20,6 @@ public:
 	virtual void codeAudio(const char* data, int len) = 0;
 
 protected:
-	AudioCodec _type;
-
 	QByteArray _buffer;
 
 	SwrContext* _swr = nullptr;
