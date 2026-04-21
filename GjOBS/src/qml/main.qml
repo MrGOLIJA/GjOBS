@@ -13,9 +13,13 @@ Window {
 
     property real scale: Screen.devicePixelRatio
 
+    AppTheme {
+        id: theme
+    }
+
     Rectangle {
         anchors.fill: parent
-        color: "#525252"
+        color: theme.background
 
         ColumnLayout {
             id: mainColumn
@@ -23,14 +27,14 @@ Window {
             anchors.fill: parent
             Rectangle {
                 id: screenLayout
-                color: "gray"
+                color: theme.background
                 Layout.fillWidth: true
                 Layout.preferredHeight: (mainWindow.height - chooseScreen.height
                                          - toolsLayout.height) * scale
             }
             Rectangle {
                 id: chooseScreen
-                color: "blue"
+                color: theme.chooseScreen
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50 * scale
             }
@@ -38,7 +42,6 @@ Window {
                 id: toolsLayout
                 Layout.fillWidth: true
                 Layout.preferredHeight: 250 * scale
-
             }
         }
     }
