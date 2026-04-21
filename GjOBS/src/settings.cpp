@@ -9,11 +9,8 @@ bool Settings::setFormat(OutputFormat format) {
 	return true;
 }
 
-OutputFormat Settings::getFormat() const {
-	return this->_format;
-}
-
 bool Settings::setAudioCodec(AudioCodec audio) {
+	if (audio == AudioCodec::NO_CODEC) return false;
 	switch (_format)
 	{
 	case OutputFormat::MP4:
@@ -103,15 +100,13 @@ bool Settings::setAudioCodec(AudioCodec audio) {
 		return false;
 		break;
 	default:
+		return false;
 		break;
 	}
 }
 
-AudioCodec Settings::getAudioCodec() const {
-	return this->_audioCodec;
-}
-
 bool Settings::setVideoCodec(VideoCodec video) {
+	if (video == VideoCodec::NO_CODEC) return false;
 	switch (_format)
 	{
 	case OutputFormat::MP4:
@@ -211,6 +206,98 @@ bool Settings::setVideoCodec(VideoCodec video) {
 	return false;
 }
 
-VideoCodec Settings::getVideoCodec() const {
-	return this->_videoCodec;
+int Settings::getAudioCodec_index() const{
+	QMetaEnum metaEnum = QMetaEnum::fromType<AudioCodec>();
+
+	for (int i = 0; i < metaEnum.keyCount(); i++) {
+		if (metaEnum.value(i) == static_cast<int>(_audioCodec)) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+int Settings::getVideoCodec_index() const {
+	QMetaEnum metaEnum = QMetaEnum::fromType<VideoCodec>();
+
+	for (int i = 0; i < metaEnum.keyCount(); i++) {
+		if (metaEnum.value(i) == static_cast<int>(_videoCodec)) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+int Settings::getFormat_index() const {
+	QMetaEnum metaEnum = QMetaEnum::fromType<OutputFormat>();
+
+	for (int i = 0; i < metaEnum.keyCount(); i++) {
+		if (metaEnum.value(i) == static_cast<int>(_format)) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+int Settings::getRend_index() const {
+	QMetaEnum metaEnum = QMetaEnum::fromType<Rend>();
+
+	for (int i = 0; i < metaEnum.keyCount(); i++) {
+		if (metaEnum.value(i) == static_cast<int>(_rend)) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+Q_INVOKABLE QVariantList Settings::getOutputFormatModel() const {
+	QVariantList list;
+	QMetaEnum metaEnum = QMetaEnum::fromType<OutputFormat>();
+
+	for (int i = 0; i < metaEnum.keyCount(); ++i) {
+		QVariantMap item;
+		item["text"] = metaEnum.key(i);
+		item["value"] = metaEnum.value(i);
+		list << item;
+	}
+	return list;
+}
+
+Q_INVOKABLE QVariantList Settings::getVideoCodecModel() const {
+	QVariantList list;
+	QMetaEnum metaEnum = QMetaEnum::fromType<VideoCodec>();
+
+	for (int i = 0; i < metaEnum.keyCount(); ++i) {
+		QVariantMap item;
+		item["text"] = metaEnum.key(i);
+		item["value"] = metaEnum.value(i);
+		list << item;
+	}
+	return list;
+}
+
+Q_INVOKABLE QVariantList Settings::getAudioCodecModel() const {
+	QVariantList list;
+	QMetaEnum metaEnum = QMetaEnum::fromType<AudioCodec>();
+
+	for (int i = 0; i < metaEnum.keyCount(); ++i) {
+		QVariantMap item;
+		item["text"] = metaEnum.key(i);
+		item["value"] = metaEnum.value(i);
+		list << item;
+	}
+	return list;
+}
+
+Q_INVOKABLE QVariantList Settings::getRendModel() const {
+	QVariantList list;
+	QMetaEnum metaEnum = QMetaEnum::fromType<Rend>();
+
+	for (int i = 0; i < metaEnum.keyCount(); ++i) {
+		QVariantMap item;
+		item["text"] = metaEnum.key(i);
+		item["value"] = metaEnum.value(i);
+		list << item;
+	}
+	return list;
 }
