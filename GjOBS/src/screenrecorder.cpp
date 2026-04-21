@@ -68,11 +68,9 @@ void ScreenRecorder::startGPUCapture() {
 
         auto now = std::chrono::high_resolution_clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - last);
-        qDebug() <<"Receive Screen, Delta:" << delta;
         auto frame = pool.TryGetNextFrame();
         last = now;
         auto surface = frame.Surface();
-        qDebug() << "1";
         if (!_dxgiSurface) {
             auto access = surface.as<Windows::Graphics::DirectX::Direct3D11::IDirect3DDxgiInterfaceAccess>();
             if (!access) {
@@ -91,16 +89,15 @@ void ScreenRecorder::startGPUCapture() {
             }
         }
 
-        qDebug() << "2";
         winrt::com_ptr<ID3D11Texture2D> d3dTexture;
         _dxgiSurface->QueryInterface(__uuidof(ID3D11Texture2D), d3dTexture.put_void());
         if (!d3dTexture) return nullptr;
-        qDebug() << "3";
+
         if (!_d3dDevice) {
             _dxgiSurface->GetDevice(__uuidof(ID3D11Device), _d3dDevice.put_void());
             if (!_d3dDevice) return nullptr;
         }
-        qDebug() << "4";
+
         if (!_context) {
             _d3dDevice->GetImmediateContext(_context.put());
             if (!_context) return nullptr;
@@ -112,17 +109,14 @@ void ScreenRecorder::startGPUCapture() {
         HRESULT hr = _d3dDevice->CreateTexture2D(&desc, nullptr, pNewTexture.put());
 
         _context->CopyResource(pNewTexture.get(), d3dTexture.get());
-        qDebug() << "send screen";
+
         emit GPUvideoFrameIsReady(pNewTexture);
-        static int i = 0;
-        qDebug() << i++;
 
     });
     session.StartCapture();
 }
 
 void ScreenRecorder::startCPUCapture() {
-    _timer->start();
     _screenCapture.start();
 }
 

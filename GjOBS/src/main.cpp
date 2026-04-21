@@ -2,6 +2,7 @@
 #include <QTimer>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QFont>
 
 #include "ffmpegManager.h"
 #include "outputdevice.h"
@@ -11,39 +12,25 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    app.setFont(QFont("Roboto"));
     QQmlApplicationEngine engine;
 
     QTimer* _timer = new QTimer(nullptr);
     _timer->setInterval(1000 / 100);
 
-    Settings settings;
-    settings.setFormat(OutputFormat::MP4);
-    settings.setAudioCodec(AudioCodec::AAC);
-    settings.setVideoCodec(VideoCodec::H_264_NVENC);
-    settings.setRend(Rend::GPU);
+    Settings* settings = new Settings();
+    settings->setFormat(Settings::OutputFormat::MP4);
+    settings->setAudioCodec(Settings::AudioCodec::AAC);
+    settings->setVideoCodec(Settings::VideoCodec::H_264_NVENC);
+    settings->setRend(Settings::Rend::GPU);
 
     ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);
     OutputDevice* audio = new OutputDevice(nullptr);
     FfmpegManager* ffmpeg = new FfmpegManager(audio, screen, settings);
-
-    engine.loadFromModule("GjOBS", "Main");
-    engine.rootContext()->setContextProperty("recorder", ffmpeg);
-
-    /*
-
-    
     ffmpeg->initFFMPEG("test.mp4");
 
-
-    QTimer* ntimer = new QTimer(nullptr);
-    ntimer->setInterval(5000);
-    ntimer->setSingleShot(true);
-
-    QObject::connect(ntimer, &QTimer::timeout, [ffmpeg]() {
-        ffmpeg->stop();
-        });
-
-    ntimer->start();*/
-
+    engine.rootContext()->setContextProperty("recorder", ffmpeg);
+    engine.rootContext()->setContextProperty("settings", settings);
+    engine.loadFromModule("GjOBS", "Main");
     return app.exec();
 }
