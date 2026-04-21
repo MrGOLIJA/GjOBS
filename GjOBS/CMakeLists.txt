@@ -55,6 +55,9 @@ qt_add_qml_module(${PROJECT_NAME}
     QML_FILES
         src/qml/Main.qml
         src/qml/ToolsLayout.qml
+        src/qml/AppTheme.qml
+        src/qml/Settings.qml
+        src/qml/GjButton.qml
 )
 
 target_include_directories(${PROJECT_NAME} 
