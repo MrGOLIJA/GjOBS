@@ -12,6 +12,7 @@
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_D3D_DEBUG", "1");
     QGuiApplication app(argc, argv);
     app.setFont(QFont("Roboto"));
     QQmlApplicationEngine engine;

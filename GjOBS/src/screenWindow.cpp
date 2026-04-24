@@ -31,7 +31,7 @@ struct PSIn {
 };
 
 float4 main(PSIn i) : SV_Target {
-    return float4(i.uv, 0, 1);
+    return tex.Sample(samp, i.uv);
 })";
 
 	QString _textVertexShader = R"(struct VSOut {
@@ -62,6 +62,7 @@ VSOut vs(uint id : SV_VertexID) {
 	if (!node) {
 		node = new QSGSimpleTextureNode();
 	}
+
 	if (!init) {
 		QRhi* rhi = window()->rhi();
 		if (rhi->backend() == QRhi::D3D11) {
@@ -122,77 +123,87 @@ VSOut vs(uint id : SV_VertexID) {
 
 	D3D11_TEXTURE2D_DESC desc;
 	_texture->GetDesc(&desc);
-	if (!_pNewTexture) {
-		_qtDevice->CreateTexture2D(&desc, nullptr, &_pNewTexture);
-	}
-	else {
-		_pNewTexture->Release();
-		_qtDevice->CreateTexture2D(&desc, nullptr, &_pNewTexture);
-	}
 
 	ID3D11ShaderResourceView* pSrcSRV = nullptr;
-	HRESULT hRes = _qtDevice->CreateShaderResourceView(_texture, nullptr, &pSrcSRV);
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = desc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;	
+	HRESULT hRes = _qtDevice->CreateShaderResourceView(_texture.get(), nullptr, &pSrcSRV);
 	if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	D3D11_TEXTURE2D_DESC renderDesc = desc;
+	renderDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	renderDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	renderDesc.Usage = D3D11_USAGE_DEFAULT;
+	renderDesc.CPUAccessFlags = 0;
+	renderDesc.MiscFlags = 0;
+
 
 	if (!_pNewTexture) {
-		_qtDevice->CreateTexture2D(&desc, nullptr, &_pNewTexture);
-	}
-	else {
-		_pNewTexture->Release();
-		_qtDevice->CreateTexture2D(&desc, nullptr, &_pNewTexture);
+		_qtDevice->CreateTexture2D(&renderDesc, nullptr, _pNewTexture.put());
+
+		_qtDevice->CreateRenderTargetView(_pNewTexture.get(), nullptr, &_pRTV);
 	}
 
-	ID3D11RenderTargetView* pRTV = nullptr;
-	_qtDevice->CreateRenderTargetView(_pNewTexture, nullptr, &pRTV);
+	_context->OMSetRenderTargets(1, &_pRTV, nullptr);
 
-	
+	float clearColor[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
+	_context->ClearRenderTargetView(_pRTV, clearColor);
 
-	_context->OMSetRenderTargets(1, &pRTV, nullptr);
-	_context->PSSetShader(_pixelShader, nullptr, 0);
-	_context->VSSetShader(_vertexShader, nullptr, 0);
 	D3D11_VIEWPORT vp = {};
-	vp.Width = width();
-	vp.Height = height();
+	vp.Width = static_cast<float>(desc.Width);
+	vp.Height = static_cast<float>(desc.Height);
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
 	_context->RSSetViewports(1, &vp);
-	_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	_context->VSSetShader(_vertexShader, nullptr, 0);
+	_context->PSSetShader(_pixelShader, nullptr, 0);
 	_context->PSSetShaderResources(0, 1, &pSrcSRV);
+	_context->IASetInputLayout(nullptr);
+	_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	_context->PSSetSamplers(0, 1, &_sampler);
+
+	ID3D11BlendState* oldBlendState = nullptr;
+	FLOAT oldBlendFactor[4];
+	UINT oldSampleMask = 0xffffffff;
+	_context->OMGetBlendState(&oldBlendState, oldBlendFactor, &oldSampleMask);
+
+	_context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
 	_context->Draw(6, 0);
 
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	this->_context->PSSetShaderResources(0, 1, &nullSRV);
+	_context->OMSetBlendState(oldBlendState, oldBlendFactor, oldSampleMask);
+	if (oldBlendState) oldBlendState->Release();
 
-	ID3D11RenderTargetView* nullRTV = nullptr;
-	_context->OMSetRenderTargets(1, &nullRTV, nullptr);
-
-	if (_QtTexture) {
-		delete _QtTexture;
+	if (!_QtTexture) {
+		_QtTexture = QNativeInterface::QSGD3D11Texture::fromNative(
+			_pNewTexture.get(),
+			window(),
+			{ (int)width(), (int)height() }
+		);
+		node->setTexture(_QtTexture);
 	}
-	_QtTexture = QNativeInterface::QSGD3D11Texture::fromNative(_pNewTexture, window(), { static_cast<int>(width()),static_cast<int>(height()) });
-	//qDebug() << "update texture";
-	node->setTexture(_QtTexture);
 	node->setRect(boundingRect());
-	
-	pRTV->Release();
 
+	if (pSrcSRV) pSrcSRV->Release();
 	return node;
 }
 
-void ScreenWindow::updateTexture(ID3D11Texture2D* texture) {
+void ScreenWindow::updateTexture(GPU_Image texture) {
 	qDebug() << "update texture";
-	_texture = texture;
+	if (!_texture) {
+		_texture = texture;
+	}
 }
 
 void ScreenWindow::setScreen(ScreenRecorder* screen){
 	_screen = screen;
 	connect(_screen, &ScreenRecorder::GPUvideoFrameIsReady, [this](GPU_Image image) {
-		updateTexture(image.get());
+		updateTexture(image);
 		QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
 		});
 }
