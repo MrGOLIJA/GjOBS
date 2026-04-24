@@ -34,6 +34,36 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		av_write_trailer(_AVFormatContext);
 		});
 
+	/*if (_settings->getRend() == Settings::Rend::CPU) {
+		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
+			_videoCoder->appendImage(image);
+			});
+
+		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
+			coderThread = new QThread();
+			_videoCoder->moveToThread(coderThread);
+			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
+			coderThread->start();
+			});
+	}
+	else {
+		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](GPU_Image image) {
+			_videoCoder->appendImage(image);
+			});
+
+		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
+			coderThread = new QThread();
+			_videoCoder->moveToThread(coderThread);
+			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
+			coderThread->start();
+			});
+	}*/
+
+	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
+	avformat_write_header(_AVFormatContext, nullptr);
+}
+
+void FfmpegManager::start() {
 	if (_settings->getRend() == Settings::Rend::CPU) {
 		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
 			_videoCoder->appendImage(image);
@@ -58,12 +88,6 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 			coderThread->start();
 			});
 	}
-
-	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
-	avformat_write_header(_AVFormatContext, nullptr);
-}
-
-void FfmpegManager::start() {
 	emit startWrite();
 }
 
@@ -156,8 +180,10 @@ void FfmpegManager::initVideoCodec() {
 void FfmpegManager::stop() {
 	_videoCoder->stop();
 
+	disconnect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, this, nullptr);
+	disconnect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, this, nullptr);
+
 	disconnect(_audioDevice, nullptr, this, nullptr);
-	disconnect(_screenRecorder, nullptr, this, nullptr);
 
 	_audioDevice->stopRead();
 	_screenRecorder->stopCapture();
