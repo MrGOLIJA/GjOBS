@@ -12,6 +12,7 @@ public:
 	Q_PROPERTY(ScreenRecorder* screen READ screen WRITE setScreen NOTIFY screenChanged)
 	ScreenWindow();
 	~ScreenWindow() override{
+		_pRTV->Release();
 		qDebug() << "Destructor called:" << this;
 	}
 
@@ -20,11 +21,11 @@ public:
 	ScreenRecorder* screen() const { return _screen; }
 	void setScreen(ScreenRecorder* screen);
 public slots:
-	void updateTexture(ID3D11Texture2D* texture);
+	void updateTexture(GPU_Image texture);
 private:
 	QSGTexture* _QtTexture = nullptr;
-	ID3D11Texture2D* _texture = nullptr;
-	ID3D11Texture2D* _pNewTexture = nullptr;
+	GPU_Image _texture = nullptr;
+	GPU_Image _pNewTexture = nullptr;
 	ScreenRecorder* _screen = nullptr;
 	ID3D11Device* _qtDevice = nullptr;
 	ID3D11DeviceContext* _context = nullptr;
@@ -36,7 +37,7 @@ private:
 	D3D11_VIEWPORT* _vp;
 
 	ID3D11SamplerState* _sampler = nullptr;
-
+	ID3D11RenderTargetView* _pRTV = nullptr;
 
 
 signals:
