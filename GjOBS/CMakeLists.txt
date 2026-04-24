@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FFMPEG_DIR ${CMAKE_SOURCE_DIR}/ffmpeg)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Multimedia Qml Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Multimedia Qml Concurrent Quick GuiPrivate)
 
 find_package(Qt${QT_VERSION_MAJOR}
     COMPONENTS
@@ -14,6 +14,8 @@ find_package(Qt${QT_VERSION_MAJOR}
         Multimedia
         Qml
         Concurrent
+        Quick
+        GuiPrivate
 )
 
 qt_standard_project_setup()
@@ -24,10 +26,10 @@ set(PROJECT_SOURCES
     src/screenrecorder.cpp
     src/ffmpegManager.cpp
     src/settings.cpp
+    src/screenWindow.cpp
     src/AudioCodersSrc/AACAudioCoder.cpp
     src/VideoCodersSrc/H_264VideoCoder.cpp
     src/VideoCodersSrc/H_264_NVENC_VideoCoder.cpp
-
 )
 
 set(PROJECT_HEADERS
@@ -35,6 +37,7 @@ set(PROJECT_HEADERS
     hdr/outputdevice.h
     hdr/screenrecorder.h
     hdr/settings.h
+    hdr/screenWindow.h
     hdr/AudioCoder.h
     hdr/VideoCoder.h
     hdr/Coder.h
@@ -77,6 +80,8 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Multimedia
         Qt::Qml
         Qt::Concurrent
+        Qt::Quick
+        Qt::GuiPrivate
     PRIVATE
         avformat
         avcodec
@@ -85,4 +90,5 @@ target_link_libraries(${PROJECT_NAME}
         avutil
         avfilter
         runtimeobject
+        D3DCompiler
 )

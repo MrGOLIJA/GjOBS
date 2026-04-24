@@ -1,5 +1,4 @@
 #include "ffmpegManager.h"
-#include <QtConcurrentRun>
 
 
 FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings* settings) : _audioDevice(audio), _screenRecorder(screen), _settings(settings)
@@ -31,7 +30,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		_audioCoder->codeAudio(data, len);
 		});
 
-	QObject::connect(_videoCoder, &Coder::finished, [this]() {
+	QObject::connect(_videoCoder.get(), &Coder::finished, [this]() {
 		av_write_trailer(_AVFormatContext);
 		});
 
@@ -43,7 +42,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
 			coderThread = new QThread();
 			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder, &VideoCoder::runCPU);
+			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
 			coderThread->start();
 			});
 	}
@@ -55,7 +54,7 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
 			coderThread = new QThread();
 			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder, &VideoCoder::runGPU);
+			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
 			coderThread->start();
 			});
 	}
@@ -129,7 +128,7 @@ void FfmpegManager::initAudioCodec() {
 	switch (_settings->getAudioCodec())
 	{
 	case Settings::AudioCodec::AAC:
-		_audioCoder = new AACAudioCoder(_AVFormatContext, _audioDevice);
+		_audioCoder = std::make_unique<AACAudioCoder>(_AVFormatContext, _audioDevice);;
 		break;
 	case Settings::AudioCodec::NO_CODEC:
 	default:
@@ -142,10 +141,10 @@ void FfmpegManager::initVideoCodec() {
 	switch (_settings->getVideoCodec())
 	{
 	case Settings::VideoCodec::H_264:
-		_videoCoder = new H_264VideoCoder(_AVFormatContext, _screenRecorder);
+		_videoCoder = std::make_unique<H_264VideoCoder>(_AVFormatContext, _screenRecorder);;
 		break;
 	case Settings::VideoCodec::H_264_NVENC:
-		_videoCoder = new H_264_NVENC_VideoCoder(_AVFormatContext, _screenRecorder);
+		_videoCoder = std::make_unique<H_264_NVENC_VideoCoder>(_AVFormatContext, _screenRecorder);
 		break;
 	case Settings::VideoCodec::NO_CODEC:
 	default:

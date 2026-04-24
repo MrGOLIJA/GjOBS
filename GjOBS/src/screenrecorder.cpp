@@ -11,11 +11,11 @@ ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
         nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
         D3D11_CREATE_DEVICE_BGRA_SUPPORT,
         featureLevels, ARRAYSIZE(featureLevels),
-        D3D11_SDK_VERSION, d3dDevice.put(), nullptr, d3dContext.put()
+        D3D11_SDK_VERSION, _d3dDevice.put(), nullptr, _context.put()
     );
 
     winrt::com_ptr<IDXGIDevice> dxgiDevice;
-    d3dDevice->QueryInterface(IID_PPV_ARGS(dxgiDevice.put()));
+    _d3dDevice->QueryInterface(IID_PPV_ARGS(dxgiDevice.put()));
 
     winrt::com_ptr<IInspectable> inspectable;
     CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.get(), inspectable.put());
@@ -104,7 +104,9 @@ void ScreenRecorder::startGPUCapture() {
         }
         D3D11_TEXTURE2D_DESC desc;
         d3dTexture->GetDesc(&desc);
-
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+        desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         winrt::com_ptr<ID3D11Texture2D> pNewTexture;
         HRESULT hr = _d3dDevice->CreateTexture2D(&desc, nullptr, pNewTexture.put());
 

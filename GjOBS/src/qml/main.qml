@@ -1,6 +1,7 @@
 ﻿import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
+import Video 1.0
 
 Window {
     visible: true
@@ -27,10 +28,19 @@ Window {
             anchors.fill: parent
             Rectangle {
                 id: screenLayout
-                color: theme.background
+                color: theme.subbackground
                 Layout.fillWidth: true
                 Layout.preferredHeight: (mainWindow.height - chooseScreen.height
                                          - toolsLayout.height) * scale
+                VideoItem {
+                    id: videoItem
+                    screen: screenCapture
+
+                    height: parent.height
+                    width: height * 16 / 9
+
+                    x: parent.width / 2 - width / 2
+                }
             }
             Rectangle {
                 id: chooseScreen

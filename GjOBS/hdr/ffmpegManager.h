@@ -46,8 +46,8 @@ private:
 private:
 	AVFormatContext* _AVFormatContext = nullptr;
 	Settings* _settings;
-	AudioCoder* _audioCoder;
-	VideoCoder* _videoCoder;
+	std::unique_ptr<AudioCoder> _audioCoder = nullptr;
+	std::unique_ptr<VideoCoder> _videoCoder = nullptr;
 
 	QThread* coderThread;
 

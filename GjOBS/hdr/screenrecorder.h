@@ -46,9 +46,6 @@ public slots:
 	void stopCapture();
 private:
 
-	winrt::com_ptr<ID3D11Device> d3dDevice;
-	winrt::com_ptr<ID3D11DeviceContext> d3dContext;
-
 	winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice winrtDevice{ nullptr };
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool framePool{ nullptr };
 	winrt::Windows::Graphics::Capture::GraphicsCaptureSession session{ nullptr };

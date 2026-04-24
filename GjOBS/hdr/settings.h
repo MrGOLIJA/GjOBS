@@ -84,4 +84,7 @@ private:
 	AudioCodec _audioCodec = AudioCodec::AAC;
 
 	Rend _rend = Rend::CPU;
+
+signals:
+    void updateSetings();
 };
