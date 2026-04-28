@@ -17,32 +17,22 @@ extern "C" {
 #include <QPixelFormat>
 
 
-struct CPUTsImage{
-	QImage image;
-	std::chrono::microseconds time;
-};
-
-struct GPUTsImage {
-	GPU_Image image;
-	std::chrono::microseconds time;
-};
-
 class VideoCoder : public Coder {
 	Q_OBJECT
 public:
 	VideoCoder(AVFormatContext* format, ScreenRecorder* recorder) : Coder(format), _screen(recorder) {}
 	~VideoCoder() override {};
 
-	void appendImage(QImage image) {
+	void appendCPUImage(QImage image) {
 		mutex.lock();
-		CPUimageQueue.append(CPUTsImage{ image ,std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch())});
+		CPUimageQueue.append(image);
 		cond.wakeOne();
 		mutex.unlock();
 	}
 
-	void appendImage(GPU_Image image) {
+	void appendGPUImage(GPU_Image image) {
 		mutex.lock();
-		GPUimageQueue.append(GPUTsImage{ image ,std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()) });
+		GPUimageQueue.append(image);
 		cond.wakeOne();
 		mutex.unlock();
 	}
@@ -181,19 +171,21 @@ public:
 		}
 
 		_screen->getContext()->Unmap(stagingTexture.get(), 0);
+		stagingTexture->Release();
+		texture->Release();
 
 		return frame;
 	}
 
 protected:
-	virtual void codeVideo(CPUTsImage image) = 0;
-	virtual void codeVideo(GPUTsImage image) = 0;
+	virtual void codeVideo(QImage image) = 0;
+	virtual void codeVideo(GPU_Image image) = 0;
 	ScreenRecorder* _screen = nullptr;
 
 	SwsContext* _sws = nullptr;
 
-	QQueue<CPUTsImage> CPUimageQueue = {};
-	QQueue<GPUTsImage> GPUimageQueue = {};
+	QQueue<QImage> CPUimageQueue = {};
+	QQueue<GPU_Image> GPUimageQueue = {};
 	QMutex mutex;
 	QWaitCondition cond;
 	bool running = true;
