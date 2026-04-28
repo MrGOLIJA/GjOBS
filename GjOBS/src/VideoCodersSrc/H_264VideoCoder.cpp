@@ -53,8 +53,8 @@ H_264VideoCoder::~H_264VideoCoder() {
 	av_packet_free(&_packet);
 }
 
-void H_264VideoCoder::codeVideo(GPUTsImage image) {
-	AVFrame* d3dFrame = convertD3DtoAVFrame(image.image);
+void H_264VideoCoder::codeVideo(GPU_Image image) {
+	AVFrame* d3dFrame = convertD3DtoAVFrame(image);
 	if (!_sws) {
 		_sws = sws_getContext(
 			_width, _height, (AVPixelFormat)d3dFrame->format,
@@ -87,7 +87,7 @@ void H_264VideoCoder::codeVideo(GPUTsImage image) {
 
 }
 
-void H_264VideoCoder::codeVideo(CPUTsImage image) {
+void H_264VideoCoder::codeVideo(QImage image) {
 	if (!_sws) {
 		_sws = sws_getContext(
 			_width, _height, AV_PIX_FMT_RGBA,
@@ -102,10 +102,10 @@ void H_264VideoCoder::codeVideo(CPUTsImage image) {
 	av_image_fill_arrays(
 		_RGBAFrame->data,
 		_RGBAFrame->linesize,
-		image.image.bits(),
+		image.bits(),
 		AV_PIX_FMT_RGBA,
-		image.image.width(),
-		image.image.height(),
+		image.width(),
+		image.height(),
 		1);
 
 	av_frame_make_writable(_YUVFrame);
@@ -114,7 +114,7 @@ void H_264VideoCoder::codeVideo(CPUTsImage image) {
 		_RGBAFrame->data,
 		_RGBAFrame->linesize,
 		0,
-		image.image.height(),
+		image.height(),
 		_YUVFrame->data,
 		_YUVFrame->linesize);
 	_YUVFrame->pts = _pts++;

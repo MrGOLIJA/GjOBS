@@ -121,8 +121,8 @@ H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
 	av_packet_free(&_packet);
 }
 
-void H_264_NVENC_VideoCoder::codeVideo(GPUTsImage image) {
-	AVFrame* d3dFrame = convertD3DtoAVFrame(image.image);
+void H_264_NVENC_VideoCoder::codeVideo(GPU_Image image) {
+	AVFrame* d3dFrame = convertD3DtoAVFrame(image);
 	d3dFrame->pts = _pts++;
 	av_buffersrc_add_frame(_buffersrc_ctx, d3dFrame);
 	av_frame_unref(_outFrame);
@@ -139,11 +139,10 @@ void H_264_NVENC_VideoCoder::codeVideo(GPUTsImage image) {
 			av_packet_unref(_packet);
 		}
 	}
-	av_frame_free(&d3dFrame);
 }
 
-void H_264_NVENC_VideoCoder::codeVideo(CPUTsImage img) {
-	QImage image = img.image.convertToFormat(QImage::Format_RGBA8888);
+void H_264_NVENC_VideoCoder::codeVideo(QImage img) {
+	QImage image = img.convertToFormat(QImage::Format_RGBA8888);
 	_RGBAFrame->format = AV_PIX_FMT_RGBA;
 	_RGBAFrame->width = _width;
 	_RGBAFrame->height = _height;
