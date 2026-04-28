@@ -55,7 +55,7 @@ Rectangle {
                 id: buttonExit
                 Layout.fillWidth: true
                 Layout.preferredHeight: 30
-                text.text: "Настройки"
+                text.text: "Выход"
                 mouseArea.onClicked: {
                     Qt.quit()
                 }
