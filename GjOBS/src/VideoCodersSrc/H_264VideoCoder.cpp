@@ -62,9 +62,6 @@ void H_264VideoCoder::codeVideo(GPU_Image image) {
 			SWS_BILINEAR, 0, 0, 0);
 	}
 	av_frame_make_writable(_YUVFrame);
-	av_image_alloc(_YUVFrame->data, _YUVFrame->linesize,
-		_codecCtx->width, _codecCtx->height,
-		_codecCtx->pix_fmt, 1);
 
 	sws_scale(_sws, d3dFrame->data, d3dFrame->linesize,
 		0, d3dFrame->height,
@@ -83,8 +80,6 @@ void H_264VideoCoder::codeVideo(GPU_Image image) {
 		av_packet_unref(_packet);
 	}
 	av_frame_free(&d3dFrame);
-
-
 }
 
 void H_264VideoCoder::codeVideo(QImage image) {

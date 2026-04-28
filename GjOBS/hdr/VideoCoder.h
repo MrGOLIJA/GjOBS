@@ -113,13 +113,17 @@ public:
 		frame->format = pixFmt;
 		frame->width = texDesc.Width;
 		frame->height = texDesc.Height;
-
-		if (av_image_alloc(frame->data, frame->linesize,
-			frame->width, frame->height,
-			pixFmt, 1) < 0) {
+		if (av_frame_get_buffer(frame, 0)<0) {
 			av_frame_free(&frame);
 			return nullptr;
 		}
+
+		//if (av_image_alloc(frame->data, frame->linesize,
+		//	frame->width, frame->height,
+		//	pixFmt, 1) < 0) {
+		//	av_frame_free(&frame);
+		//	return nullptr;
+		//}
 
 		D3D11_TEXTURE2D_DESC stagingDesc = texDesc;
 		stagingDesc.Usage = D3D11_USAGE_STAGING;
@@ -171,9 +175,6 @@ public:
 		}
 
 		_screen->getContext()->Unmap(stagingTexture.get(), 0);
-		stagingTexture->Release();
-		texture->Release();
-
 		return frame;
 	}
 
