@@ -3,12 +3,12 @@
 
 FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings* settings) : _audioDevice(audio), _screenRecorder(screen), _settings(settings)
 {
-	QObject::connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead, Qt::QueuedConnection);
+	connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead, Qt::QueuedConnection);
 	if (_settings->getRend() == Settings::Rend::CPU) {
 		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startCPUCapture,Qt::QueuedConnection);
 	}
 	else {
-		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startGPUCapture, Qt::QueuedConnection);
+		connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startGPUCapture, Qt::QueuedConnection);
 	}
 }
 
@@ -26,12 +26,13 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	initAudioCodec();
 	initVideoCodec();
 
-	QObject::connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
+	connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
 		_audioCoder->codeAudio(data, len);
 		});
 
-	QObject::connect(_videoCoder.get(), &Coder::finished, [this]() {
+	connect(_videoCoder.get(), &Coder::finished, [this]() {
 		av_write_trailer(_AVFormatContext);
+		avio_close(_AVFormatContext->pb);
 		});
 
 	/*if (_settings->getRend() == Settings::Rend::CPU) {
@@ -65,31 +66,45 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 
 void FfmpegManager::start() {
 	if (_settings->getRend() == Settings::Rend::CPU) {
-		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
-			_videoCoder->appendImage(image);
-			});
+		if (!_frameConnection) {
+			_frameConnection = connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image) {
+				_videoCoder->appendCPUImage(image);
+				});
+		}
 
-		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
-			coderThread = new QThread();
-			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
-			coderThread->start();
-			});
+		if (!_connect) {
+			QMetaObject::Connection con;
+			con = connect(this, &FfmpegManager::startWrite, [this,con]() {
+				coderThread = new QThread();
+				_videoCoder->moveToThread(coderThread);
+				connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
+				coderThread->start();
+				disconnect(con);
+				});
+		}
 	}
 	else {
-		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](GPU_Image image) {
-			_videoCoder->appendImage(image);
-			});
+		if (!_frameConnection) {
+			_frameConnection = connect(_screenRecorder, &ScreenRecorder::CopyGPUVideoFrameIsReady, [this](GPU_Image image) {
+				_videoCoder->appendGPUImage(image);
+				});
+		}
 
-		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
-			coderThread = new QThread();
-			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
-			coderThread->start();
-			});
+		if (!_connect) {
+			QMetaObject::Connection con;
+			con = connect(this, &FfmpegManager::startWrite, [this,con]() {
+				coderThread = new QThread();
+				_videoCoder->moveToThread(coderThread);
+				connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
+				coderThread->start();
+				disconnect(con);
+				});
+		}
 	}
+	_connect = true;
 	emit startWrite();
 }
+
 
 void FfmpegManager::initFormat(const char* filename) {
 	QString name = filename;
@@ -180,8 +195,7 @@ void FfmpegManager::initVideoCodec() {
 void FfmpegManager::stop() {
 	_videoCoder->stop();
 
-	disconnect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, this, nullptr);
-	disconnect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, this, nullptr);
+	disconnect(_frameConnection);
 
 	disconnect(_audioDevice, nullptr, this, nullptr);
 

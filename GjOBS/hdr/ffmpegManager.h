@@ -20,6 +20,7 @@ extern "C"
 
 #include <atomic>
 
+#include <QMetaObject>
 #include <QQueue>
 #include <QMutex>
 #include <QThread>
@@ -53,6 +54,10 @@ private:
 
 	OutputDevice* _audioDevice = nullptr;
 	ScreenRecorder* _screenRecorder = nullptr;
+
+	bool _connect = false;
+
+	QMetaObject::Connection _frameConnection = {};
 
 signals:
 	void startWrite();
