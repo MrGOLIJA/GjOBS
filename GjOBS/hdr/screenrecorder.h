@@ -69,5 +69,6 @@ private:
 signals:
 	void CPUvideoFrameIsReady(QImage image,QImage::Format pixels);
 	void GPUvideoFrameIsReady(GPU_Image image);
+	void CopyGPUVideoFrameIsReady(GPU_Image copy);
 };
 
