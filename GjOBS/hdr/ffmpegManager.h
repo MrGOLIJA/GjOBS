@@ -50,12 +50,13 @@ private:
 	std::unique_ptr<AudioCoder> _audioCoder = nullptr;
 	std::unique_ptr<VideoCoder> _videoCoder = nullptr;
 
-	QThread* coderThread;
+	QThread* _coderThread;
 
 	OutputDevice* _audioDevice = nullptr;
 	ScreenRecorder* _screenRecorder = nullptr;
 
 	bool _connect = false;
+	bool _moveToThread = false;
 
 	QMetaObject::Connection _frameConnection = {};
 

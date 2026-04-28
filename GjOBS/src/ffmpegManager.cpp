@@ -73,13 +73,14 @@ void FfmpegManager::start() {
 		}
 
 		if (!_connect) {
-			QMetaObject::Connection con;
-			con = connect(this, &FfmpegManager::startWrite, [this,con]() {
-				coderThread = new QThread();
-				_videoCoder->moveToThread(coderThread);
-				connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
-				coderThread->start();
-				disconnect(con);
+			connect(this, &FfmpegManager::startWrite, [this]() {
+				if (!this->_moveToThread) {
+					_coderThread = new QThread();
+					_videoCoder->moveToThread(_coderThread);
+					connect(_coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
+					this->_moveToThread = true;
+				}
+				_coderThread->start();
 				});
 		}
 	}
@@ -91,13 +92,15 @@ void FfmpegManager::start() {
 		}
 
 		if (!_connect) {
-			QMetaObject::Connection con;
-			con = connect(this, &FfmpegManager::startWrite, [this,con]() {
-				coderThread = new QThread();
-				_videoCoder->moveToThread(coderThread);
-				connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
-				coderThread->start();
-				disconnect(con);
+
+			connect(this, &FfmpegManager::startWrite, [this]() {
+				if (!this->_moveToThread) {
+					_coderThread = new QThread();
+					_videoCoder->moveToThread(_coderThread);
+					connect(_coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
+					this->_moveToThread = true;
+				}
+				_coderThread->start();
 				});
 		}
 	}
