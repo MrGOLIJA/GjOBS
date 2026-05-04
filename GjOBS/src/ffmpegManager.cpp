@@ -1,14 +1,11 @@
 #include "ffmpegManager.h"
 
 
-FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings* settings) : _audioDevice(audio), _screenRecorder(screen), _settings(settings)
+FfmpegManager::FfmpegManager(OutputDevice* audio, ScreenRecorder* screen,Settings* settings) : _audioDevice(audio), _screenRecorder(screen), _settings(settings), _name()
 {
 	connect(this, &FfmpegManager::startWrite, _audioDevice, &OutputDevice::startRead, Qt::QueuedConnection);
 	if (_settings->getRend() == Settings::Rend::CPU) {
 		QObject::connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startCPUCapture,Qt::QueuedConnection);
-	}
-	else {
-		connect(this, &FfmpegManager::startWrite, _screenRecorder, &ScreenRecorder::startGPUCapture, Qt::QueuedConnection);
 	}
 }
 
@@ -21,10 +18,15 @@ FfmpegManager::~FfmpegManager() {
 	}
 }
 
-void FfmpegManager::initFFMPEG(const char* filename) {
-	initFormat(filename);
-	initAudioCodec();
+void FfmpegManager::start() {
+	char ctime[256] = {};
+	auto now = time(NULL);
+	auto tm = localtime(&now);
+	strftime(ctime, sizeof(ctime), "%Y-%m-%d-%H-%M", tm);
+
+	initFormat(ctime);
 	initVideoCodec();
+	initAudioCodec();
 
 	connect(_audioDevice, &OutputDevice::readyBuffer, [this](const char* data, qint64 len) {
 		_audioCoder->codeAudio(data, len);
@@ -33,46 +35,19 @@ void FfmpegManager::initFFMPEG(const char* filename) {
 	connect(_videoCoder.get(), &Coder::finished, [this]() {
 		av_write_trailer(_AVFormatContext);
 		avio_close(_AVFormatContext->pb);
+		avformat_free_context(_AVFormatContext);
 		});
 
-	/*if (_settings->getRend() == Settings::Rend::CPU) {
-		QObject::connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image, QImage::Format fmt) {
-			_videoCoder->appendImage(image);
-			});
-
-		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
-			coderThread = new QThread();
-			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runCPU);
-			coderThread->start();
-			});
-	}
-	else {
-		QObject::connect(_screenRecorder, &ScreenRecorder::GPUvideoFrameIsReady, [this](GPU_Image image) {
-			_videoCoder->appendImage(image);
-			});
-
-		QObject::connect(this, &FfmpegManager::startWrite, [this]() {
-			coderThread = new QThread();
-			_videoCoder->moveToThread(coderThread);
-			QObject::connect(coderThread, &QThread::started, _videoCoder.get(), &VideoCoder::runGPU);
-			coderThread->start();
-			});
-	}*/
-
-	avio_open(&_AVFormatContext->pb, filename, AVIO_FLAG_WRITE);
+	avio_open(&_AVFormatContext->pb, _name.toUtf8(), AVIO_FLAG_WRITE);
 	avformat_write_header(_AVFormatContext, nullptr);
-}
 
-void FfmpegManager::start() {
-	if (_settings->getRend() == Settings::Rend::CPU) {
-		if (!_frameConnection) {
-			_frameConnection = connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image) {
-				_videoCoder->appendCPUImage(image);
+	if (!_connect) {
+		if (_settings->getRend() == Settings::Rend::CPU) {
+
+			connect(_screenRecorder, &ScreenRecorder::CPUvideoFrameIsReady, [this](QImage image) {
+				if (this->_running)
+					_videoCoder->appendCPUImage(image);
 				});
-		}
-
-		if (!_connect) {
 			connect(this, &FfmpegManager::startWrite, [this]() {
 				if (!this->_moveToThread) {
 					_coderThread = new QThread();
@@ -82,16 +57,14 @@ void FfmpegManager::start() {
 				}
 				_coderThread->start();
 				});
-		}
-	}
-	else {
-		if (!_frameConnection) {
-			_frameConnection = connect(_screenRecorder, &ScreenRecorder::CopyGPUVideoFrameIsReady, [this](GPU_Image image) {
-				_videoCoder->appendGPUImage(image);
-				});
-		}
 
-		if (!_connect) {
+		}
+		else if (_settings->getRend() == Settings::Rend::GPU) {
+			connect(_screenRecorder, &ScreenRecorder::CopyGPUVideoFrameIsReady, [this](GPU_Image image) {
+				if (this->_running) {
+					_videoCoder->appendGPUImage(image);
+				}
+				});
 
 			connect(this, &FfmpegManager::startWrite, [this]() {
 				if (!this->_moveToThread) {
@@ -104,10 +77,11 @@ void FfmpegManager::start() {
 				});
 		}
 	}
-	_connect = true;
+	if(!_connect)
+		_connect = true;
+	_running = true;
 	emit startWrite();
 }
-
 
 void FfmpegManager::initFormat(const char* filename) {
 	QString name = filename;
@@ -164,6 +138,7 @@ void FfmpegManager::initFormat(const char* filename) {
 	default:
 		break;
 	}
+	_name = name;
 }
 
 void FfmpegManager::initAudioCodec() {
@@ -196,6 +171,8 @@ void FfmpegManager::initVideoCodec() {
 }
 
 void FfmpegManager::stop() {
+	_running = false;
+
 	_videoCoder->stop();
 
 	disconnect(_frameConnection);
@@ -205,5 +182,3 @@ void FfmpegManager::stop() {
 	_audioDevice->stopRead();
 	_screenRecorder->stopCapture();
 }
-
-

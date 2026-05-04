@@ -24,6 +24,7 @@ extern "C"
 #include <QQueue>
 #include <QMutex>
 #include <QThread>
+#include <QTime>
 
 class FfmpegManager : public QObject
 {
@@ -57,8 +58,11 @@ private:
 
 	bool _connect = false;
 	bool _moveToThread = false;
+	bool _running = false;
 
 	QMetaObject::Connection _frameConnection = {};
+
+	QString _name;
 
 signals:
 	void startWrite();
