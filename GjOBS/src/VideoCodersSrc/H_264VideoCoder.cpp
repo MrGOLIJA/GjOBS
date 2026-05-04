@@ -51,6 +51,12 @@ H_264VideoCoder::~H_264VideoCoder() {
 	av_frame_free(&_RGBAFrame);
 	av_frame_free(&_YUVFrame);
 	av_packet_free(&_packet);
+	avformat_close_input(&_formatCtx);
+	avcodec_free_context(&_codecCtx);
+	av_frame_free(&_frame);
+
+	_codec = nullptr;
+	_stream = nullptr;
 }
 
 void H_264VideoCoder::codeVideo(GPU_Image image) {

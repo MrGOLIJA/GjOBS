@@ -15,7 +15,6 @@ protected:
 	void codeVideo(QImage image) override;
 	void codeVideo(GPU_Image image) override;
 private:
-	void initGraph();
 
 	AVBufferRef* _deviceCtx = nullptr;
 	AVBufferRef* _framesRef = nullptr;

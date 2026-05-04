@@ -78,7 +78,7 @@ void AACAudioCoder::codeAudio(const char* data, int len) {
 
 		av_frame_make_writable(_frame);
 
-		qDebug()<<swr_convert(
+		swr_convert(
 			_swr,
 			_frame->data,
 			_frame->nb_samples,
@@ -95,7 +95,6 @@ void AACAudioCoder::codeAudio(const char* data, int len) {
 			packet->stream_index = _stream->index;
 			packet->dts = packet->pts;
 			packet->duration = _codecCtx->frame_size;
-			qDebug() << "Write Audio";
 			av_packet_rescale_ts(
 				packet,
 				_codecCtx->time_base,

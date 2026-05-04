@@ -23,10 +23,10 @@ H_264_NVENC_VideoCoder::H_264_NVENC_VideoCoder(AVFormatContext* format, ScreenRe
 	_codecCtx->gop_size = 100;
 	_codecCtx->max_b_frames = 0;
 
-	av_opt_set(_codecCtx->priv_data, "preset", "p6", 0);
+	av_opt_set(_codecCtx->priv_data, "preset", "p3", 0);
+	av_opt_set(_codecCtx->priv_data, "tune", "ull", 0);
+	av_opt_set(_codecCtx->priv_data, "rc", "vbr", 0);
 	av_opt_set(_codecCtx->priv_data, "profile", "high", 0);
-	av_opt_set(_codecCtx->priv_data, "rc", "vbr_hq", 0);
-	av_opt_set(_codecCtx->priv_data, "rc-lookahead", "20", 0);
 
 	av_opt_set(_codecCtx->priv_data, "spatial-aq", "1", 0);
 	av_opt_set(_codecCtx->priv_data, "temporal-aq", "1", 0);
@@ -115,10 +115,20 @@ H_264_NVENC_VideoCoder::H_264_NVENC_VideoCoder(AVFormatContext* format, ScreenRe
 }
 
 H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
-	av_frame_free(&_RGBAFrame);
-	av_frame_free(&_YUVFrame);
+	avformat_close_input(&_formatCtx);
+	avcodec_free_context(&_codecCtx);
+	av_frame_free(&_frame);
 	av_frame_free(&_outFrame);
-	av_packet_free(&_packet);
+	avfilter_graph_free(&_filterGraph);
+	av_buffer_unref(&_framesRef);
+	av_buffer_unref(&_deviceCtx);
+
+	_codec = nullptr;
+	_stream = nullptr;
+	_CUDACtx = nullptr;
+	_buffersrc_ctx = nullptr;
+	_buffersink_ctx = nullptr;
+	_formatFilter = nullptr;
 }
 
 void H_264_NVENC_VideoCoder::codeVideo(GPU_Image image) {
