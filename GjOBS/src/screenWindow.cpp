@@ -194,7 +194,6 @@ VSOut vs(uint id : SV_VertexID) {
 }
 
 void ScreenWindow::updateTexture(GPU_Image texture) {
-	qDebug() << "update texture";
 	if (!_texture) {
 		_texture = texture;
 	}

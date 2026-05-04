@@ -21,7 +21,11 @@ class VideoCoder : public Coder {
 	Q_OBJECT
 public:
 	VideoCoder(AVFormatContext* format, ScreenRecorder* recorder) : Coder(format), _screen(recorder) {}
-	~VideoCoder() override {};
+	~VideoCoder() override {
+		av_frame_free(&_RGBAFrame);
+		av_frame_free(&_YUVFrame);
+		av_packet_free(&_packet);
+	};
 
 	void appendCPUImage(QImage image) {
 		mutex.lock();
@@ -32,6 +36,11 @@ public:
 
 	void appendGPUImage(GPU_Image image) {
 		mutex.lock();
+		if (GPUimageQueue.size() > 50) {
+			mutex.unlock();
+			return;
+		}
+		qDebug() << GPUimageQueue.size();
 		GPUimageQueue.append(image);
 		cond.wakeOne();
 		mutex.unlock();
@@ -44,6 +53,7 @@ public:
 				cond.wait(&mutex);
 			}
 			if (!running && CPUimageQueue.isEmpty()) {
+				mutex.unlock();
 				break;
 			}
 			auto image = CPUimageQueue.dequeue();
@@ -68,12 +78,14 @@ public:
 					av_interleaved_write_frame(_formatCtx, _packet);
 					av_packet_unref(_packet);
 				}
+				mutex.unlock();
 				break;
 			}
 			auto image = GPUimageQueue.dequeue();
 			mutex.unlock();
 			codeVideo(image);
 		}
+		qDebug() << "finish";
 		emit finished();
 	}
 
@@ -117,13 +129,6 @@ public:
 			av_frame_free(&frame);
 			return nullptr;
 		}
-
-		//if (av_image_alloc(frame->data, frame->linesize,
-		//	frame->width, frame->height,
-		//	pixFmt, 1) < 0) {
-		//	av_frame_free(&frame);
-		//	return nullptr;
-		//}
 
 		D3D11_TEXTURE2D_DESC stagingDesc = texDesc;
 		stagingDesc.Usage = D3D11_USAGE_STAGING;
@@ -173,8 +178,8 @@ public:
 					texDesc.Width * 4);
 			}
 		}
-
 		_screen->getContext()->Unmap(stagingTexture.get(), 0);
+		texture->Release();
 		return frame;
 	}
 
@@ -187,8 +192,8 @@ protected:
 
 	QQueue<QImage> CPUimageQueue = {};
 	QQueue<GPU_Image> GPUimageQueue = {};
-	QMutex mutex;
-	QWaitCondition cond;
+	QMutex mutex = {};
+	QWaitCondition cond = {};
 	bool running = true;
 
 	int _width = GetSystemMetrics(SM_CXSCREEN);

@@ -30,10 +30,13 @@ Rectangle {
                         recorder.start()
                         buttonStart.started = true
                         text.text = "Остановить запись"
+                        console.log("Started")
+
                     } else {
                         recorder.stop()
                         buttonStart.started = false
                         text.text = "Начать запись"
+                        console.log("Stoped")
                     }
                 }
             }

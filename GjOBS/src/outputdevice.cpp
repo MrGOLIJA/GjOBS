@@ -105,7 +105,6 @@ void OutputDevice::startRead() {
         }
         if (SUCCEEDED(hRes)) {
             emit readyBuffer(reinterpret_cast<char*>(_data), _bufferSize * _blockAlign);
-            //writeData(reinterpret_cast<char*>(_data), _bufferSize*2*2);
         }
         _pCaptureClient->ReleaseBuffer(_bufferSize);
     }

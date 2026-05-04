@@ -33,7 +33,10 @@ ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
 }
 
 ScreenRecorder::~ScreenRecorder()
-{}
+{
+    if (session)
+        session.Close();
+}
 
 winrt::Windows::Graphics::Capture::GraphicsCaptureItem CreateItem(HWND hWnd) {
     auto factory = winrt::get_activation_factory<winrt::Windows::Graphics::Capture::GraphicsCaptureItem>();
@@ -103,7 +106,6 @@ void ScreenRecorder::startGPUCapture() {
             if (!_context) return nullptr;
         }
         emit GPUvideoFrameIsReady(d3dTexture);
-
         D3D11_TEXTURE2D_DESC desc;
         d3dTexture->GetDesc(&desc);
         desc.Usage = D3D11_USAGE_DEFAULT;
@@ -123,9 +125,8 @@ void ScreenRecorder::startCPUCapture() {
 }
 
 void ScreenRecorder::stopCapture() {
-    _screenCapture.stop();
-    if(session)
-        session.Close();
+    if(_screenCapture.isActive())
+        _screenCapture.stop();
     _timer->stop();
 }
 
@@ -136,7 +137,7 @@ void ScreenRecorder::getVideoFrame() {
     auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - last);
 
     last = now;
-    qDebug() << "Прошло" << delta;
+    qDebug() << "elapsed" << delta;
     QVideoFrame frame = _videoSink->videoFrame();
     if (frame.map(QVideoFrame::MapMode::ReadOnly)) {
         QImage image = frame.toImage();

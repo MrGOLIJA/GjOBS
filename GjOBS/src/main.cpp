@@ -18,6 +18,22 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     qmlRegisterType<ScreenWindow>("Video", 1, 0, "VideoItem");
 
+    DISPLAY_DEVICE dd = {};
+    dd.cb = sizeof(DISPLAY_DEVICE);
+    int index = 0;
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    for (QScreen* screen : screens) {
+        QString model = screen->model();
+        qDebug() << screen->size().height()* screen->devicePixelRatio();
+        qDebug() << screen->size().width()* screen->devicePixelRatio();
+        qDebug() << screen->name();
+        qDebug() << screen->refreshRate();
+        if (model.isEmpty()) {
+            model = "Неизвестная модель";
+        }
+        qDebug() << "Модель:" << model;
+    }
+
     QTimer* _timer = new QTimer(nullptr);
     _timer->setInterval(1000 / 100);
 
@@ -30,7 +46,6 @@ int main(int argc, char *argv[])
     ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);
     OutputDevice* audio = new OutputDevice(nullptr);
     FfmpegManager* ffmpeg = new FfmpegManager(audio, screen, settings);
-    ffmpeg->initFFMPEG("test.mp4");
 
     screen->startGPUCapture();
     engine.rootContext()->setContextProperty("recorder", ffmpeg);
