@@ -15,7 +15,10 @@ class AudioCoder : public Coder{
 	Q_OBJECT
 public:
 	AudioCoder(AVFormatContext* format, OutputDevice* device) : Coder(format),_device(device)  {};
-	virtual ~AudioCoder() {}
+	virtual ~AudioCoder()
+	{
+		swr_free(&_swr);
+	}
 
 	virtual void codeAudio(const char* data, int len) = 0;
 

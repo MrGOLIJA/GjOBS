@@ -14,6 +14,7 @@ extern "C"
 #include "settings.h"
 
 #include "AudioCodersHdr/AACAudioCoder.h"
+#include "AudioCodersHdr/MP3AudioCoder.h"
 
 #include "VideoCodersHdr/H_264VideoCoder.h"
 #include "VideoCodersHdr/H_264_NVENC_VideoCoder.h"
