@@ -20,7 +20,7 @@ MP3AudioCoder::MP3AudioCoder(AVFormatContext* format, OutputDevice* device) : Au
 
 	_codecCtx = avcodec_alloc_context3(_codec);
 	_codecCtx->sample_rate = _sampleRate;
-	_codecCtx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+	_codecCtx->sample_fmt = AV_SAMPLE_FMT_S16P;
 	_codecCtx->frame_size = 1152;
 	_codecCtx->bit_rate = _bitRate;
 	_codecCtx->time_base = AVRational{ 1, static_cast<int>(_sampleRate) };
