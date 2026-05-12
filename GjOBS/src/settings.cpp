@@ -1,6 +1,15 @@
 #include "settings.h"
 
-Settings::Settings(){}
+Settings::Settings()
+{
+	_formatStrings << "MP4" << "MKV" << "MOV" << "WebM" << "MPEG_TS" << "AVI" << "WMV";
+
+	_videoCodecStrings << "Без кодировщика" << "H264" << "H264(NVENC)" << "H265" << "AV1" << "VP9";
+
+	_audioCodecStrings << "Без кодировщика" << "AAC" << "OPUS" << "MP3" << "FLAC";
+
+	_rendStrings << "CPU" << "GPU";
+}
 
 Settings::~Settings(){}
 
@@ -256,7 +265,7 @@ Q_INVOKABLE QVariantList Settings::getOutputFormatModel() const {
 
 	for (int i = 0; i < metaEnum.keyCount(); ++i) {
 		QVariantMap item;
-		item["text"] = metaEnum.key(i);
+		item["text"] = _formatStrings[i];
 		item["value"] = metaEnum.value(i);
 		list << item;
 	}
@@ -269,7 +278,7 @@ Q_INVOKABLE QVariantList Settings::getVideoCodecModel() const {
 
 	for (int i = 0; i < metaEnum.keyCount(); ++i) {
 		QVariantMap item;
-		item["text"] = metaEnum.key(i);
+		item["text"] = _videoCodecStrings[i];
 		item["value"] = metaEnum.value(i);
 		list << item;
 	}
@@ -282,7 +291,7 @@ Q_INVOKABLE QVariantList Settings::getAudioCodecModel() const {
 
 	for (int i = 0; i < metaEnum.keyCount(); ++i) {
 		QVariantMap item;
-		item["text"] = metaEnum.key(i);
+		item["text"] = _audioCodecStrings[i];
 		item["value"] = metaEnum.value(i);
 		list << item;
 	}
@@ -295,9 +304,108 @@ Q_INVOKABLE QVariantList Settings::getRendModel() const {
 
 	for (int i = 0; i < metaEnum.keyCount(); ++i) {
 		QVariantMap item;
-		item["text"] = metaEnum.key(i);
+		item["text"] = _rendStrings[i];
 		item["value"] = metaEnum.value(i);
 		list << item;
 	}
 	return list;
+}
+
+BOOL CALLBACK allWindow(HWND hWnd, LPARAM lParam) {
+	char title[256] = {};
+	Settings* settings = reinterpret_cast<Settings*>(lParam);
+	if (!IsWindowVisible(hWnd)) {
+		return TRUE;
+	}
+	if (GetWindowTextA(hWnd, title, sizeof(title)) == 0) {
+		return TRUE;
+	}
+	LONG_PTR style = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+	if ((style & WS_EX_APPWINDOW) && !(style & WS_EX_TOOLWINDOW)) {
+		return TRUE;
+	}
+	qDebug() << QString::fromLocal8Bit(title);
+	settings->addWindowToList({ 0,QString::fromLocal8Bit(title),hWnd });
+	return TRUE;
+}
+
+Q_INVOKABLE QVariantList Settings::getMonitorModel() {
+	_monitors.clear();
+	_windows.clear();
+	QVariantList list;
+	const QList<QScreen*> screens = QGuiApplication::screens();
+	for (QScreen* screen : screens) {
+		QVariantMap item;
+		auto* windowsScreen = screen->nativeInterface<QNativeInterface::QWindowsScreen>();
+		if (!_hMonitor) {
+			_hMonitor = windowsScreen->handle();
+		}
+		QString name = QString("%1 %2 %3 %4Гц")
+			.arg(screen->name())
+			.arg(QString::number(screen->size().width() * screen->devicePixelRatio()))
+			.arg(QString::number(screen->size().height() * screen->devicePixelRatio()))
+			.arg(QString::number(screen->refreshRate()));
+		_monitors.push_back({offset,name,windowsScreen->handle()});
+		item["text"] = name;
+		item["value"] = offset++;
+
+		list << item;
+
+	}
+	windowStart = offset;
+	EnumWindows(allWindow, reinterpret_cast<LPARAM>(this));
+	for (const auto& w : _windows) {
+		QVariantMap item;
+		item["text"] = w.name;
+		item["value"] = w.pos;
+		list << item;
+	}
+	offset = 0;
+	return list;
+}
+
+Q_INVOKABLE int Settings::getMonitor_Index() const {
+	if (_hMonitor) {
+		for (const auto& m : _monitors) {
+			if (m.hMonitor == _hMonitor) {
+				return m.pos;
+			}
+		}
+	}
+	else {
+		for (const auto& w : _windows) {
+			if (w.hWnd == _hWnd) {
+				return w.pos;
+			}
+		}
+	}
+	return 0;
+}
+
+void Settings::addWindowToList(Window wnd) {
+	wnd.pos = offset++;
+	_windows.push_back(wnd);
+}
+
+Q_INVOKABLE void Settings::setMonitor(int index) {
+	if (index >= windowStart) {
+		_hMonitor = 0;
+		for (const auto& w : _windows) {
+			if (w.pos == index) {
+				_hWnd = w.hWnd;
+				emit changedWindow(_hWnd);
+				return;
+			}
+		}
+	}
+	else {
+		_hWnd = 0;
+		for (const auto& m : _monitors) {
+			if (m.pos == index) {
+				_hMonitor = m.hMonitor;
+				emit changedMonitor(_hMonitor);
+				return;
+			}
+		}
+	}
 }
