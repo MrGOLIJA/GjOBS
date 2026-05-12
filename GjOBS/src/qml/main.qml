@@ -35,14 +35,13 @@ Window {
                 VideoItem {
                     id: videoItem
                     screen: screenCapture
-
                     height: parent.height
                     width: height * 16 / 9
 
                     x: parent.width / 2 - width / 2
                 }
             }
-            Rectangle {
+            ChooseScreen {
                 id: chooseScreen
                 color: theme.chooseScreen
                 Layout.fillWidth: true

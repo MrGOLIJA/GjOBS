@@ -115,20 +115,26 @@ H_264_NVENC_VideoCoder::H_264_NVENC_VideoCoder(AVFormatContext* format, ScreenRe
 }
 
 H_264_NVENC_VideoCoder::~H_264_NVENC_VideoCoder() {
-	avformat_close_input(&_formatCtx);
 	avcodec_free_context(&_codecCtx);
 	av_frame_free(&_frame);
 	av_frame_free(&_outFrame);
 	avfilter_graph_free(&_filterGraph);
 	av_buffer_unref(&_framesRef);
 	av_buffer_unref(&_deviceCtx);
+	avformat_close_input(&_formatCtx);
 
-	_codec = nullptr;
-	_stream = nullptr;
-	_CUDACtx = nullptr;
-	_buffersrc_ctx = nullptr;
-	_buffersink_ctx = nullptr;
-	_formatFilter = nullptr;
+	if(_codec)
+		_codec = nullptr;
+	if(_stream)
+		_stream = nullptr;
+	if(_CUDACtx)
+		_CUDACtx = nullptr;
+	if(_buffersink_ctx)
+		_buffersink_ctx = nullptr;
+	if(_buffersrc_ctx)
+		_buffersrc_ctx = nullptr;
+	if(_formatFilter)
+		_formatFilter = nullptr;
 }
 
 void H_264_NVENC_VideoCoder::codeVideo(GPU_Image image) {

@@ -21,6 +21,7 @@ class VideoCoder : public Coder {
 	Q_OBJECT
 public:
 	VideoCoder(AVFormatContext* format, ScreenRecorder* recorder) : Coder(format), _screen(recorder) {}
+
 	~VideoCoder() override {
 		av_frame_free(&_RGBAFrame);
 		av_frame_free(&_YUVFrame);
@@ -135,6 +136,8 @@ public:
 		stagingDesc.BindFlags = 0;
 		stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		stagingDesc.MiscFlags = 0;
+		stagingDesc.MipLevels = 1;
+		stagingDesc.ArraySize = 1;
 
 		winrt::com_ptr<ID3D11Texture2D> stagingTexture;
 		HRESULT hr = _screen->getDevice()->CreateTexture2D(&stagingDesc, nullptr, stagingTexture.put());

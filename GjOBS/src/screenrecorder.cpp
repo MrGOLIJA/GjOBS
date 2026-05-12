@@ -3,6 +3,9 @@
 #include <QPixmap>
 #include <chrono>
 #include <windows.graphics.directx.direct3d11.interop.h>
+
+winrt::Windows::Graphics::Capture::GraphicsCaptureItem CreateItem(HMONITOR hMonitor);
+
 ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
 	: QObject(parent)
 {
@@ -27,9 +30,10 @@ ScreenRecorder::ScreenRecorder(QObject *parent,QTimer* timer)
     _session.setScreenCapture(&_screenCapture);
     _session.setVideoSink(_videoSink);
 
+    item = CreateItem(MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY));
+
     connect(_timer, &QTimer::timeout, this, &ScreenRecorder::getVideoFrame, Qt::DirectConnection);
 
-    
 }
 
 ScreenRecorder::~ScreenRecorder()
@@ -56,8 +60,49 @@ winrt::Windows::Graphics::Capture::GraphicsCaptureItem CreateItem(HMONITOR hMoni
     return item;
 }
 
+void ScreenRecorder::changeItemFromMonitor(HMONITOR hMonitor) {
+    if (framePool)
+        framePool.Close();
+    framePool = nullptr;
+    if (session)
+        session.Close();
+    session = nullptr;
+    if (_dxgiSurface)
+        _dxgiSurface = nullptr;
+    if (_context) {
+        _context->Flush();
+        _context = nullptr;
+    }
+    item = CreateItem(hMonitor);
+    startGPUCapture();
+    emit changedScreen();
+}
+
+void ScreenRecorder::changeItemFromWindow(HWND hWnd) {
+    if(framePool)
+        framePool.Close();
+    framePool = nullptr;
+    if(session)
+        session.Close();
+    session = nullptr;
+    if (_dxgiSurface)
+        _dxgiSurface = nullptr;
+    if (_context) {
+        _context->Flush();
+        _context = nullptr;
+    }
+    item = CreateItem(hWnd);
+    startGPUCapture();
+    emit changedScreen();
+}
+
 void ScreenRecorder::startGPUCapture() {
-    auto item = CreateItem(MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY));
+    if (!item) {
+        return;
+    }
+    if (item.Size() == decltype(item.Size()){0, 0}) {
+        return;
+    }
     framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::CreateFreeThreaded(
         winrtDevice,
         winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized,
@@ -66,7 +111,7 @@ void ScreenRecorder::startGPUCapture() {
     );
     session = framePool.CreateCaptureSession(item);
 
-    framePool.FrameArrived([&](auto& pool, auto&) {
+    framePool.FrameArrived([this](auto& pool, auto&) {
         static auto last = std::chrono::high_resolution_clock::now();
 
         auto now = std::chrono::high_resolution_clock::now();
@@ -105,6 +150,7 @@ void ScreenRecorder::startGPUCapture() {
             _d3dDevice->GetImmediateContext(_context.put());
             if (!_context) return nullptr;
         }
+        cond.wakeAll();
         emit GPUvideoFrameIsReady(d3dTexture);
         D3D11_TEXTURE2D_DESC desc;
         d3dTexture->GetDesc(&desc);
@@ -147,3 +193,29 @@ void ScreenRecorder::getVideoFrame() {
     }
 }
 
+winrt::com_ptr<ID3D11DeviceContext> ScreenRecorder::getContext(){
+    condM.lock();
+    if (!_context) {
+        cond.wait(&condM);
+    }
+    condM.unlock();
+    return _context;
+}
+
+winrt::com_ptr<ID3D11Device> ScreenRecorder::getDevice() {
+    condM.lock();
+    if (!_d3dDevice) {
+        cond.wait(&condM);
+    }
+    condM.unlock();
+    return _d3dDevice;
+}
+
+winrt::impl::com_ref<IDXGISurface> ScreenRecorder::getSurface() {
+    condM.lock();
+    if (!_dxgiSurface) {
+        cond.wait(&condM);
+    }
+    condM.unlock();
+    return _dxgiSurface;
+}

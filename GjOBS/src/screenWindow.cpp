@@ -21,7 +21,9 @@ ScreenWindow::ScreenWindow() :
 //}
 
 QSGNode* ScreenWindow::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
-
+	if (!_texture) {
+		return old;
+	}
 	QString _textResourceShader = R"(Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
@@ -123,12 +125,23 @@ VSOut vs(uint id : SV_VertexID) {
 
 	D3D11_TEXTURE2D_DESC desc;
 	_texture->GetDesc(&desc);
+	if (size == QSize{-1,-1})
+		size = { (int)desc.Width,(int)desc.Height };
+
+	if (size.width() != desc.Width || size.height() != desc.Height) {
+		size = { (int)desc.Width,(int)desc.Height };
+		_pNewTexture = nullptr;
+		_QtTexture = nullptr;
+
+	}
 
 	ID3D11ShaderResourceView* pSrcSRV = nullptr;
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
 	srvDesc.Format = desc.Format;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;	
+	srvDesc.Texture2D.MipLevels = 1;
+
 	HRESULT hRes = _qtDevice->CreateShaderResourceView(_texture.get(), nullptr, &pSrcSRV);
 	if (FAILED(hRes)) std::cerr << std::hex << hRes << std::endl;
 
@@ -205,4 +218,10 @@ void ScreenWindow::setScreen(ScreenRecorder* screen){
 		updateTexture(image);
 		QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
 		});
+	emit screenChanged();
+	connect(_screen, &ScreenRecorder::changedScreen, this, &ScreenWindow::releaseTexture);
+}
+
+void ScreenWindow::releaseTexture() {
+	_texture = nullptr;
 }

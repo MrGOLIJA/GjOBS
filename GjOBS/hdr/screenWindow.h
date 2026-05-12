@@ -13,7 +13,6 @@ public:
 	ScreenWindow();
 	~ScreenWindow() override{
 		_pRTV->Release();
-		qDebug() << "Destructor called:" << this;
 	}
 
 	QSGNode* updatePaintNode(QSGNode* old, UpdatePaintNodeData*) override;
@@ -31,6 +30,7 @@ private:
 	ID3D11DeviceContext* _context = nullptr;
 
 	bool init = false;
+	QSize size;
 
 	ID3D11PixelShader* _pixelShader = nullptr;
 	ID3D11VertexShader* _vertexShader = nullptr;
@@ -39,6 +39,8 @@ private:
 	ID3D11SamplerState* _sampler = nullptr;
 	ID3D11RenderTargetView* _pRTV = nullptr;
 
+private:
+	void releaseTexture();
 
 signals:
 	void screenChanged();

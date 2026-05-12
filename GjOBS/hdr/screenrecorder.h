@@ -23,6 +23,8 @@
 #include <QMediaDevices>
 #include <QMediaRecorder>
 #include <QMediaCaptureSession>
+#include <QWaitCondition>
+#include <QMutex>
 
 using GPU_Image = winrt::com_ptr<ID3D11Texture2D>;
 
@@ -34,9 +36,13 @@ public:
 	ScreenRecorder(QObject *parent,QTimer* _timer);
 	~ScreenRecorder();
 
-	winrt::impl::com_ref<IDXGISurface> getSurface() const { return _dxgiSurface; }
-	winrt::com_ptr<ID3D11Device> getDevice() const { return _d3dDevice; }
-	winrt::com_ptr<ID3D11DeviceContext> getContext() const { return _context; }
+	winrt::impl::com_ref<IDXGISurface> getSurface();
+	winrt::com_ptr<ID3D11Device> getDevice();
+	winrt::com_ptr<ID3D11DeviceContext> getContext();
+
+	void changeItemFromMonitor(HMONITOR hMonitor);
+	void changeItemFromWindow(HWND hWnd);
+
 public slots:
 	void getVideoFrame();
 
@@ -49,6 +55,7 @@ private:
 	winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice winrtDevice{ nullptr };
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool framePool{ nullptr };
 	winrt::Windows::Graphics::Capture::GraphicsCaptureSession session{ nullptr };
+	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item{ nullptr };
 
 	winrt::impl::com_ref<IDXGISurface> _dxgiSurface;
 
@@ -66,9 +73,14 @@ private:
 
 	QTimer* _timer;
 
+	QWaitCondition cond = {};
+	QMutex mutex;
+	QMutex condM;
+
 signals:
 	void CPUvideoFrameIsReady(QImage image,QImage::Format pixels);
 	void GPUvideoFrameIsReady(GPU_Image image);
 	void CopyGPUVideoFrameIsReady(GPU_Image copy);
+	void changedScreen();
 };
 
