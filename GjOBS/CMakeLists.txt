@@ -61,6 +61,7 @@ qt_add_qml_module(${PROJECT_NAME}
         src/qml/AppTheme.qml
         src/qml/Settings.qml
         src/qml/GjButton.qml
+        src/qml/ChooseScreen.qml
 )
 
 target_include_directories(${PROJECT_NAME} 

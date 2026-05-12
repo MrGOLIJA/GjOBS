@@ -12,27 +12,11 @@
 
 int main(int argc, char *argv[])
 {
-    qputenv("QT_D3D_DEBUG", "1");
+    system("chcp 1251 && cls");
     QGuiApplication app(argc, argv);
     app.setFont(QFont("Roboto"));
     QQmlApplicationEngine engine;
-    qmlRegisterType<ScreenWindow>("Video", 1, 0, "VideoItem");
-
-    DISPLAY_DEVICE dd = {};
-    dd.cb = sizeof(DISPLAY_DEVICE);
-    int index = 0;
-    const QList<QScreen*> screens = QGuiApplication::screens();
-    for (QScreen* screen : screens) {
-        QString model = screen->model();
-        qDebug() << screen->size().height()* screen->devicePixelRatio();
-        qDebug() << screen->size().width()* screen->devicePixelRatio();
-        qDebug() << screen->name();
-        qDebug() << screen->refreshRate();
-        if (model.isEmpty()) {
-            model = "Неизвестная модель";
-        }
-        qDebug() << "Модель:" << model;
-    }
+    qmlRegisterType<ScreenWindow>("Video", 1, 0, "VideoItem");    
 
     QTimer* _timer = new QTimer(nullptr);
     _timer->setInterval(1000 / 100);
@@ -47,7 +31,10 @@ int main(int argc, char *argv[])
     OutputDevice* audio = new OutputDevice(nullptr);
     FfmpegManager* ffmpeg = new FfmpegManager(audio, screen, settings);
 
-    screen->startGPUCapture();
+    QObject::connect(settings, &Settings::changedMonitor, screen, &ScreenRecorder::changeItemFromMonitor);
+    QObject::connect(settings, &Settings::changedWindow, screen, &ScreenRecorder::changeItemFromWindow);
+
+    //screen->startGPUCapture();
     engine.rootContext()->setContextProperty("recorder", ffmpeg);
     engine.rootContext()->setContextProperty("settings", settings);
     engine.rootContext()->setContextProperty("screenCapture", screen);
