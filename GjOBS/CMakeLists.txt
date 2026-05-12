@@ -28,6 +28,8 @@ set(PROJECT_SOURCES
     src/settings.cpp
     src/screenWindow.cpp
     src/AudioCodersSrc/AACAudioCoder.cpp
+    src/AudioCodersSrc/MP3AudioCoder.cpp
+    src/AudioCodersSrc/FLACAudioCoder.cpp
     src/VideoCodersSrc/H_264VideoCoder.cpp
     src/VideoCodersSrc/H_264_NVENC_VideoCoder.cpp
 )
@@ -42,6 +44,8 @@ set(PROJECT_HEADERS
     hdr/VideoCoder.h
     hdr/Coder.h
     hdr/AudioCodersHdr/AACAudioCoder.h
+    hdr/AudioCodersHdr/MP3AudioCoder.h
+    hdr/AudioCodersHdr/FLACAudioCoder.h
     hdr/VideoCodersHdr/H_264VideoCoder.h
     hdr/VideoCodersHdr/H_264_NVENC_VideoCoder.h
 

@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
 
     Settings* settings = new Settings();
     settings->setFormat(Settings::OutputFormat::MP4);
-    settings->setAudioCodec(Settings::AudioCodec::AAC);
-    settings->setVideoCodec(Settings::VideoCodec::H_264_NVENC);
+    settings->setAudioCodec(Settings::AudioCodec::MP3);
+    settings->setVideoCodec(Settings::VideoCodec::H_264);
     settings->setRend(Settings::Rend::GPU);
 
     ScreenRecorder* screen = new ScreenRecorder(nullptr, _timer);

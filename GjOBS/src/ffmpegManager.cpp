@@ -145,7 +145,10 @@ void FfmpegManager::initAudioCodec() {
 	switch (_settings->getAudioCodec())
 	{
 	case Settings::AudioCodec::AAC:
-		_audioCoder = std::make_unique<AACAudioCoder>(_AVFormatContext, _audioDevice);;
+		_audioCoder = std::make_unique<AACAudioCoder>(_AVFormatContext, _audioDevice);
+		break;
+	case Settings::AudioCodec::MP3:
+		_audioCoder = std::make_unique<MP3AudioCoder>(_AVFormatContext, _audioDevice);
 		break;
 	case Settings::AudioCodec::NO_CODEC:
 	default:
