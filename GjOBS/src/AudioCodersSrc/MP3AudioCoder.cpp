@@ -34,7 +34,7 @@ MP3AudioCoder::MP3AudioCoder(AVFormatContext* format, OutputDevice* device) : Au
 	swr_alloc_set_opts2(
 		&_swr,
 		&_codecCtx->ch_layout,
-		AV_SAMPLE_FMT_S16P,
+		AV_SAMPLE_FMT_S16,
 		_sampleRate,
 		&_codecCtx->ch_layout,
 		_formatDevice == Format::FLOAT ? AV_SAMPLE_FMT_FLT : AV_SAMPLE_FMT_S16,
@@ -76,13 +76,18 @@ void MP3AudioCoder::codeAudio(const char* data, int len) {
 		int inSamples = chunk.size() / (_channels * _bytesPerSample);
 
 		av_frame_make_writable(_frame);
+		if (_device->getFormat() != Format::PCM) {
+			swr_convert(
+				_swr,
+				_frame->data,
+				_frame->nb_samples,
+				in,
+				inSamples);
+		}
+		else {
+			memcpy(_frame->data, in,sizeof(in));
 
-		swr_convert(
-			_swr,
-			_frame->data,
-			_frame->nb_samples,
-			in,
-			inSamples);
+		}
 
 		_frame->pts = _pts;
 		_pts += _codecCtx->frame_size;
